@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SNS GEN 사용 가이드</title>
+<style>
+  :root {
+    --bg: #1a1825;
+    --bg-card: #252336;
+    --bg-card-2: #2d2a40;
+    --text: #e8e6f0;
+    --text-dim: #a8a4b8;
+    --border: #3d3a52;
+    --c1: #8889CD;  /* 라벤더 */
+    --c2: #DDAACC;  /* 핑크 */
+    --c3: #CCAA88;  /* 베이지 */
+    --c4: #BB6688;  /* 로즈 */
+    --c5: #884499;
+    --c6: #EE1166;
+    --c7: #FF6699;
+    --c8: #00BBDD;
+    --c9: #FF7722;
+    --c10: #0077DD;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+    padding: 16px;
+    padding-bottom: 90px;
+    scroll-behavior: smooth;
+  }
+  .container { max-width: 720px; margin: 0 auto; }
+  
+  header {
+    background: linear-gradient(135deg, #8889CD 0%, #BB6688 100%);
+    padding: 28px 24px;
+    border-radius: 18px;
+    margin-bottom: 22px;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(136, 137, 205, 0.2);
+  }
+  header h1 {
+    margin: 0 0 6px 0;
+    font-size: 26px;
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  header p {
+    margin: 0;
+    color: rgba(255,255,255,0.88);
+    font-size: 13px;
+  }
+  
+  /* 목차 */
+  nav.toc {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 22px;
+  }
+  nav.toc h2 {
+    margin: 0 0 12px 0;
+    font-size: 12px;
+    color: var(--c1);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  nav.toc ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  nav.toc a {
+    color: var(--text);
+    text-decoration: none;
+    font-size: 13.5px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    display: block;
+    background: var(--bg-card-2);
+    transition: background 0.15s;
+  }
+  nav.toc a:active {
+    background: var(--c1);
+    color: #fff;
+  }
+  
+  /* 섹션 */
+  section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 14px;
+    scroll-margin-top: 12px;
+  }
+  section h2 {
+    margin: 0 0 14px 0;
+    font-size: 18px;
+    color: var(--c1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+  }
+  section h3 {
+    margin: 16px 0 8px 0;
+    font-size: 14.5px;
+    color: var(--c2);
+    font-weight: 600;
+  }
+  section p { margin: 8px 0; }
+  
+  /* 카드 그리드 */
+  .card-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 540px) {
+    .card-grid.two { grid-template-columns: 1fr 1fr; }
+  }
+  .card {
+    background: var(--bg-card-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .card-title {
+    font-weight: 700;
+    color: var(--c3);
+    font-size: 12px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .card-body {
+    font-size: 14px;
+    color: var(--text);
+  }
+  
+  /* 정의 리스트 */
+  dl.kv {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin: 0;
+  }
+  dl.kv > div {
+    background: var(--bg-card-2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    border-left: 3px solid var(--c1);
+  }
+  dl.kv dt {
+    color: var(--c2);
+    font-weight: 600;
+    font-size: 13.5px;
+    margin-bottom: 2px;
+  }
+  dl.kv dd {
+    margin: 0;
+    color: var(--text);
+    font-size: 14px;
+  }
+  
+  /* 테이블 */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -4px;
+    padding: 0 4px;
+    border-radius: 8px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 100%;
+    background: var(--bg-card-2);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  th {
+    background: rgba(136,137,205,0.12);
+    color: var(--c1);
+    font-weight: 700;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+  }
+  td code { font-size: 12px; }
+  
+  code {
+    background: rgba(204,170,136,0.12);
+    color: var(--c3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Consolas, 'Liberation Mono', monospace;
+    font-size: 12.5px;
+    word-break: break-word;
+  }
+  
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .badge.ok { background: rgba(0,187,221,0.15); color: var(--c8); }
+  .badge.warn { background: rgba(204,170,136,0.18); color: var(--c3); }
+  .badge.no { background: rgba(187,102,136,0.18); color: var(--c4); }
+  .badge.new { background: rgba(221,170,204,0.18); color: var(--c2); }
+  
+  /* details */
+  details {
+    margin: 10px 0;
+    background: var(--bg-card-2);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  details summary {
+    cursor: pointer;
+    padding: 12px 14px;
+    font-weight: 600;
+    color: var(--c2);
+    list-style: none;
+    user-select: none;
+    font-size: 14px;
+  }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::before {
+    content: '▶';
+    display: inline-block;
+    margin-right: 8px;
+    font-size: 9px;
+    color: var(--c1);
+    transition: transform 0.2s;
+  }
+  details[open] summary::before {
+    transform: rotate(90deg);
+  }
+  details .details-body {
+    padding: 0 14px 14px;
+    font-size: 13.5px;
+    color: var(--text);
+  }
+  details .details-body p:first-child { margin-top: 0; }
+  
+  /* 컬러 팔레트 */
+  .palette {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  @media (min-width: 480px) {
+    .palette { grid-template-columns: repeat(4, 1fr); }
+  }
+  .swatch {
+    border-radius: 10px;
+    padding: 14px 12px;
+    color: #fff;
+    text-align: center;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  .swatch .label {
+    font-size: 12px;
+    opacity: 0.9;
+  }
+  .swatch .hex {
+    font-family: monospace;
+    font-weight: 700;
+    font-size: 13px;
+    margin-top: 3px;
+  }
+  
+  .palette-2 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+  }
+  @media (min-width: 480px) {
+    .palette-2 { grid-template-columns: repeat(6, 1fr); }
+  }
+  .swatch-sm {
+    border-radius: 8px;
+    padding: 10px 6px;
+    color: #fff;
+    text-align: center;
+    font-family: monospace;
+    font-size: 11px;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  }
+  
+  /* 패치 노트 */
+  .patch {
+    border-left: 3px solid var(--c4);
+    padding: 4px 0 4px 14px;
+    margin: 14px 0;
+  }
+  .patch h4 {
+    margin: 0 0 4px 0;
+    color: var(--c2);
+    font-size: 14.5px;
+    font-weight: 600;
+  }
+  .patch p {
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--text-dim);
+    line-height: 1.55;
+  }
+  
+  /* 맨 위로 */
+  .top-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, var(--c1), var(--c4));
+    color: #fff;
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 22px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+    cursor: pointer;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* 강조 박스 */
+  .note {
+    background: rgba(221,170,204,0.08);
+    border: 1px solid rgba(221,170,204,0.25);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin: 12px 0;
+    font-size: 13.5px;
+    color: var(--text);
+  }
+  .note strong { color: var(--c2); }
+</style>
+</head>
+<body>
+<div class="container">
+  
+  <header>
+    <h1>📱 SNS GEN 사용 가이드</h1>
+    <p>Ultimate SNS Generator · v3</p>
+  </header>
+  
+  <nav class="toc">
+    <h2>📑 목차</h2>
+    <ul>
+      <li><a href="#quick">⚡ 빠른 시작</a></li>
+      <li><a href="#controls">🎮 컨트롤</a></li>
+      <li><a href="#modes">🎯 모드별 비율</a></li>
+      <li><a href="#auto-ratio">🔁 비율 토글</a></li>
+      <li><a href="#camera">📷 카메라 세부</a></li>
+      <li><a href="#internal">⚙️ 내부 규칙</a></li>
+      <li><a href="#palette">🎨 컬러 팔레트</a></li>
+      <li><a href="#patch">🧪 최근 패치</a></li>
+    </ul>
+  </nav>
+  
+  <section id="quick">
+    <h2>⚡ 빠른 시작</h2>
+    <div class="card-grid two">
+      <div class="card">
+        <div class="card-title">STEP 1</div>
+        <div class="card-body">모드 선택 (유튜브/X/카메라 등)</div>
+      </div>
+      <div class="card">
+        <div class="card-title">STEP 2</div>
+        <div class="card-body">하단 <code>사진</code> 버튼으로 이미지 업로드</div>
+      </div>
+      <div class="card">
+        <div class="card-title">STEP 3</div>
+        <div class="card-body">미리보기 확인하면서 비율/줌 조정</div>
+      </div>
+      <div class="card">
+        <div class="card-title">STEP 4</div>
+        <div class="card-body"><code>추출</code> 버튼 → PNG 다운로드</div>
+      </div>
+    </div>
+  </section>
+  
+  <section id="controls">
+    <h2>🎮 컨트롤</h2>
+    
+    <h3>상단</h3>
+    <dl class="kv">
+      <div><dt>테마</dt><dd>다크 / 라이트</dd></div>
+      <div><dt>프리셋</dt><dd>저장 / 불러오기 (브라우저 로컬 자동 기억)</dd></div>
+      <div><dt>UI 텍스트 크기</dt><dd>슬라이더로 전체 텍스트 크기 조정</dd></div>
+      <div><dt>미리보기 배율</dt><dd><code>40%</code> / <code>60%</code> / <code>75%</code> / <code>100%</code> 또는 <code>맞춤</code> (화면 자동 fit)</dd></div>
+    </dl>
+    
+    <h3>하단 바</h3>
+    <dl class="kv">
+      <div><dt>사진</dt><dd>이미지 업로드</dd></div>
+      <div><dt>나눠보기 / 컨트롤만</dt><dd>미리보기 / 컨트롤 분할 모드 토글 (모바일은 "컨트롤만"으로 표시)</dd></div>
+      <div><dt>저장</dt><dd>현재 설정 프리셋 저장</dd></div>
+      <div><dt>추출</dt><dd>최종 PNG 추출</dd></div>
+    </dl>
+    
+    <h3>배경 이미지 맞춤 & 줌</h3>
+    <dl class="kv">
+      <div><dt>업로드 이미지 원본 비율 맞춤</dt><dd>켜면 이미지 본래 비율 사용 (단 <strong>카메라 모드는 무시</strong>)</dd></div>
+      <div><dt>수동 비율 드롭다운</dt><dd><code>16:9</code> / <code>9:16</code> / <code>1:1</code> / <code>4:5</code> / <code>자유 비율(W:H 직접 입력)</code></dd></div>
+      <div><dt>마우스 드래그 이동(Pan)</dt><dd>켜면 미리보기에서 배경 끌어 이동 가능</dd></div>
+      <div><dt>사진 가득 채우기 (정중앙)</dt><dd>한 번에 cover + 중앙 정렬</dd></div>
+      <div><dt>배경 줌 %</dt><dd><code>100%</code> = cover · 그 이상은 비율 확대</dd></div>
+    </dl>
+    
+    <h3>배경 어둡게 (그라데이션)</h3>
+    <dl class="kv">
+      <div><dt>범위 %</dt><dd>어두워지는 영역 크기</dd></div>
+      <div><dt>진하기</dt><dd>어두움 강도 (0 ~ 1)</dd></div>
+    </dl>
+  </section>
+  
+  <section id="modes">
+    <h2>🎯 모드별 비율</h2>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>모드</th><th>크기</th><th>자유 비율</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>유튜브 일반</td><td>1000 × auto</td><td><span class="badge ok">가변</span></td></tr>
+          <tr><td>X (트위터)</td><td>600 × auto</td><td><span class="badge ok">가변</span></td></tr>
+          <tr><td>유튜브 쇼츠</td><td>832 × 1216 세로</td><td><span class="badge warn">폭 고정</span></td></tr>
+          <tr><td>인스타 릴스</td><td>832 × 1216 세로</td><td><span class="badge warn">폭 고정</span></td></tr>
+          <tr><td>인스타 스토리</td><td>832 × 1216 세로</td><td><span class="badge warn">폭 고정</span></td></tr>
+          <tr><td>카톡</td><td>832 × 1216 세로</td><td><span class="badge warn">폭 고정</span></td></tr>
+          <tr><td>유튜브 라이브</td><td>1216 × 832 가로</td><td><span class="badge warn">폭 고정</span></td></tr>
+          <tr><td>치지직 라이브</td><td>1216 × 832 가로</td><td><span class="badge warn">폭 고정</span></td></tr>
+          <tr><td>인스타 포스트</td><td>1024 × auto</td><td><span class="badge ok">1:1 디폴트</span></td></tr>
+          <tr><td>Pornhub</td><td>1000 × auto</td><td><span class="badge ok">가변</span></td></tr>
+          <tr><td>카메라</td><td>종류별 동적</td><td><span class="badge new">selMediaRatio</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  
+  <section id="auto-ratio">
+    <h2>🔁 "원본 비율 맞춤" 토글</h2>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-title">ON · 가변 모드</div>
+        <div class="card-body">이미지 비율 그대로 자유롭게</div>
+      </div>
+      <div class="card">
+        <div class="card-title">ON · 폭 고정 모드</div>
+        <div class="card-body">폭 고정, 높이만 이미지 비율 따라</div>
+      </div>
+      <div class="card">
+        <div class="card-title">ON · 카메라</div>
+        <div class="card-body"><span class="badge no">무시</span> UI 보호 위해 클래스 비율 유지</div>
+      </div>
+      <div class="card">
+        <div class="card-title">OFF · 가변 / 카메라</div>
+        <div class="card-body">selMediaRatio 드롭다운으로 비율 선택</div>
+      </div>
+      <div class="card">
+        <div class="card-title">OFF · 폭 고정 모드</div>
+        <div class="card-body">박스 크기 그대로 고정</div>
+      </div>
+    </div>
+  </section>
+  
+  <section id="camera">
+    <h2>📷 카메라 모드 세부</h2>
+    
+    <h3>카메라 종류 & 디폴트 비율</h3>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>종류</th><th>캡처영역</th><th>selMediaRatio 디폴트</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>폰카</td><td>세로 832×1216</td><td><code>9:16</code></td></tr>
+          <tr><td>DSLR</td><td>가로 1216×832</td><td><code>16:9</code></td></tr>
+          <tr><td>캠코더</td><td>가로 1216×832</td><td><code>16:9</code></td></tr>
+          <tr><td>액션캠</td><td>가로 1216×832</td><td><code>16:9</code></td></tr>
+          <tr><td>필름 + 폴라로이드</td><td>세로 베이스</td><td><code>1:1</code> ✨</td></tr>
+          <tr><td>필름 + 체키</td><td>세로 베이스</td><td><code>1:1</code> ✨</td></tr>
+          <tr><td>필름 + 35mm</td><td>가로 1216×832</td><td><code>16:9</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="note">
+      💡 <strong>카메라 종류 / 필름 종류를 바꾸면 selMediaRatio가 자동 리셋</strong>됨. 1:1 같은 수동 설정 유지하려면 종류 변경 후 다시 선택.
+    </div>
+    
+    <h3>카메라 진입 시 자동 처리</h3>
+    <dl class="kv">
+      <div><dt>chkAutoRatio</dt><dd>자동 <span class="badge no">OFF</span></dd></div>
+      <div><dt>fillImageToTarget()</dt><dd>cover 자동 실행</dd></div>
+      <div><dt>chkPanMode</dt><dd>자동 <span class="badge ok">ON</span></dd></div>
+      <div><dt>setCameraSelMediaRatioDefault()</dt><dd>종류별 디폴트 비율 적용</dd></div>
+    </dl>
+    
+    <h3>카메라 옵션</h3>
+    <dl class="kv">
+      <div><dt>모드</dt><dd>사진 / 동영상</dd></div>
+      <div><dt>촬영 상태</dt><dd>평상시 / 직전 / 직후(플래시) / 찍은 후</dd></div>
+      <div><dt>타임코드</dt><dd>시:분:초 (동영상 모드)</dd></div>
+      <div><dt>노출 정보</dt><dd>ISO · F값 · 셔터속도 · 날짜 · 카메라 모델명</dd></div>
+      <div><dt>AI 자동생성</dt><dd>ChatGPT 연동 메타데이터</dd></div>
+    </dl>
+  </section>
+  
+  <section id="internal">
+    <h2>⚙️ 내부 동작 규칙</h2>
+    
+    <details>
+      <summary>changeMode() 시 흐름</summary>
+      <div class="details-body">
+        <p>1. <code>captureArea.className = ''</code> — 클래스 리셋</p>
+        <p>2. <code>captureArea.classList.remove('pan-target')</code> — pan-target 제거</p>
+        <p>3. <code>captureArea.style.height = ''</code> — 인라인 높이 비움</p>
+        <p>4. 새 모드 클래스 적용</p>
+        <p>5. <code>updateImageSettings()</code> 호출 → 비율 재계산</p>
+        <p>6. <code>updateUI()</code>, <code>updateUiZoom()</code>, 모바일이면 <code>applyMobileAutoZoom()</code></p>
+      </div>
+    </details>
+    
+    <details>
+      <summary>updateImageSettings() 시 흐름</summary>
+      <div class="details-body">
+        <p>1. <code>getActivePanTarget()</code> 으로 현재 타겟 결정</p>
+        <p style="margin-left:14px;">· yt_std → <code>ytContainer</code></p>
+        <p style="margin-left:14px;">· x → <code>xContainer</code></p>
+        <p style="margin-left:14px;">· ig_post → <code>igPanBox</code></p>
+        <p style="margin-left:14px;">· ph → <code>phContainer</code></p>
+        <p style="margin-left:14px;">· 그 외 (카메라 포함) → <code>captureArea</code></p>
+        <p>2. <code>backgroundSize</code> 설정 (cover or N%)</p>
+        <p>3. <strong>잔류 인라인 정리</strong> — captureArea + target의 height, aspectRatio 비움</p>
+        <p>4. isAutoRatio 분기로 비율 적용</p>
+      </div>
+    </details>
+    
+    <details>
+      <summary>모바일 자동 fit 로직</summary>
+      <div class="details-body">
+        <p><code>fitPreviewToWrapper()</code> 함수</p>
+        <p>· padding: 48 (모바일) / 60 (PC)</p>
+        <p>· bottomSafeMargin: 60 (모바일 하단바 + safe-area)</p>
+        <p>· safety: 0.95 (여유분)</p>
+        <p>· Math.max(0.05, ...) clamp — 정밀 조정</p>
+        <p>· scheduleAutoFit(delay=320ms) — media-box transition 이후 측정</p>
+      </div>
+    </details>
+    
+    <details>
+      <summary>슬라이더 정밀도</summary>
+      <div class="details-body">
+        <p>· uiZoomSlider: <code>min=0.05</code>, <code>step=0.01</code></p>
+        <p>· numUiZoom, miniNumUiZoom: 동일</p>
+      </div>
+    </details>
+  </section>
+  
+  <section id="palette">
+    <h2>🎨 컬러 팔레트</h2>
+    
+    <h3>1순위</h3>
+    <div class="palette">
+      <div class="swatch" style="background:#8889CD"><div class="label">라벤더</div><div class="hex">#8889CD</div></div>
+      <div class="swatch" style="background:#DDAACC"><div class="label">핑크</div><div class="hex">#DDAACC</div></div>
+      <div class="swatch" style="background:#CCAA88"><div class="label">베이지</div><div class="hex">#CCAA88</div></div>
+      <div class="swatch" style="background:#BB6688"><div class="label">로즈</div><div class="hex">#BB6688</div></div>
+    </div>
+    
+    <h3>2순위</h3>
+    <div class="palette-2">
+      <div class="swatch-sm" style="background:#884499">#884499</div>
+      <div class="swatch-sm" style="background:#EE1166">#EE1166</div>
+      <div class="swatch-sm" style="background:#FF6699">#FF6699</div>
+      <div class="swatch-sm" style="background:#00BBDD">#00BBDD</div>
+      <div class="swatch-sm" style="background:#FF7722">#FF7722</div>
+      <div class="swatch-sm" style="background:#0077DD">#0077DD</div>
+    </div>
+  </section>
+  
+  <section id="patch">
+    <h2>🧪 최근 패치 노트</h2>
+    
+    <div class="patch">
+      <h4>📷 카메라 selMediaRatio 누수 버그 해결</h4>
+      <p>이전엔 다른 모드에서 9:16으로 설정 후 카메라 진입 시 잔류로 박스 깨졌음. 이제 카메라 진입 시 종류별 디폴트로 자동 리셋.</p>
+    </div>
+    
+    <div class="patch">
+      <h4>✨ 카메라 자유 비율 지원</h4>
+      <p>카메라 모드에서도 selMediaRatio 드롭다운(1:1 / 16:9 / 9:16 / 4:5 / 자유) 사용 가능. 단 "원본 비율 맞춤 ON"은 UI 보호 위해 무시.</p>
+    </div>
+    
+    <div class="patch">
+      <h4>🧹 모드 전환 잔류 인라인 정리</h4>
+      <p>updateImageSettings 진입 시 항상 captureArea + target의 잔류 height, aspectRatio 비움 → 모드 전환 누수 차단.</p>
+    </div>
+    
+    <div class="patch">
+      <h4>📱 모바일 fit 정밀화 & 짤림 해결</h4>
+      <p>슬라이더 min 0.3 → 0.05, step 0.05 → 0.01. fit safety 0.88 → 0.95. 하단 60px safe margin 차감. fullscreen-preview에 dvh 적용.</p>
+    </div>
+  </section>
+  
+</div>
+
+<button class="top-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="맨 위로">↑</button>
+
+</body>
+</html>
