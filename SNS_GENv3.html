@@ -776,6 +776,28 @@
         .ctrl-jump-btn .material-icons { font-size: 18px; }
         .ctrl-jump-btn:active { transform: scale(0.97); }
 
+        .back-to-main {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 12px;
+            background: transparent;
+            border: 1px solid #333;
+            border-radius: 6px;
+            color: #aaa;
+            font-size: 11px; font-weight: 700;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.15s ease;
+            align-self: flex-start;
+            white-space: nowrap;
+        }
+        .back-to-main:hover {
+            border-color: #8889CD;
+            color: #8889CD;
+            background: rgba(136,137,205,0.08);
+        }
+        .back-to-main:active { transform: scale(0.96); }
+
         /* ========= 📱 모바일 하단 액션 바 (Lore Forge 스타일) ========= */
         .mob-bottom-bar {
             display: none;
@@ -884,6 +906,7 @@
             .mobile-fab-toggle { display: none !important; }
             .mob-bottom-bar { display: flex; }
             .ctrl-jump-btn { display: flex; }  /* 모바일 컨트롤 점프 버튼 표시 */
+            .back-to-main { padding: 5px 10px; font-size: 10px; }
 
             /* 모바일 검토 바: 화면 너비 거의 다 사용 */
             #reviewBar { 
@@ -926,6 +949,7 @@
 <body class="theme-dark">
 
 <div class="controls-wrapper" id="leftPanel">
+    <a href="index.html" class="back-to-main" title="메인으로 돌아가기">← 메인</a>
     <button class="ctrl-jump-btn" onclick="toggleMobilePreview()" title="미리보기 화면으로">
         <span class="material-icons">visibility</span>
         <span>👁️ 미리보기 크게 보기</span>

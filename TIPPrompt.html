@@ -64,9 +64,30 @@
 
   /* 헤더 */
   header {
+    position: relative;
     text-align: center;
     margin-bottom: 32px;
   }
+  .back-to-main {
+    position: absolute;
+    top: 0; left: 0;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 12px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-sub);
+    font-size: 12px; font-weight: 600;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .back-to-main:hover {
+    border-color: var(--c1);
+    color: var(--c1);
+    background: rgba(136,137,205,0.08);
+  }
+  .back-to-main:active { transform: scale(0.96); }
   header .crown {
     font-size: 28px;
     margin-bottom: 10px;
@@ -199,6 +220,7 @@
 <div class="container">
 
   <header>
+    <a href="index.html" class="back-to-main" title="메인으로">← 메인</a>
     <span class="crown">🎨</span>
     <h1>AI 프롬프트 문법 마스터 가이드</h1>
     <p>WebUI, NAI, Anima 등 이미지 생성 AI를 위한 태그·자연어 프롬프트 문법 총정리</p>
