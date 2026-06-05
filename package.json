@@ -1,0 +1,12 @@
+{
+  "name": "genseries",
+  "version": "1.0.0",
+  "description": "GEN Series - 이미지 도구 모음",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^32.0.0"
+  }
+}
