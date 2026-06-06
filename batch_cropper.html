@@ -81,6 +81,27 @@ header {
 .brand {
   display: flex; align-items: baseline; gap: 12px;
 }
+.back-to-main {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px;
+  margin-right: 4px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--text-1);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px; font-weight: 600;
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.back-to-main:hover {
+  border-color: var(--purple);
+  color: var(--purple);
+  background: rgba(136,137,205,0.06);
+}
+.back-to-main:active { transform: scale(0.96); }
 .brand-mark {
   font-family: "JetBrains Mono", monospace;
   font-weight: 700; font-size: 14px;
@@ -923,6 +944,10 @@ body[data-mode="compress"] .mob-btn[data-show="crop"]     { display: none; }
   .brand-sub { display: none; }
   .stat-bar { display: none; }
   .mode-toggle button { padding: 5px 10px; font-size: 10px; }
+  .back-to-main {
+    padding: 4px 8px; font-size: 10px; margin-right: 2px;
+  }
+  .back-to-main .label { display: none; }
 
   /* main: 세로 분할 — 위:스테이지 / 아래:사이드바 */
   main {
@@ -1010,6 +1035,9 @@ body[data-mode="compress"] .mob-btn[data-show="crop"]     { display: none; }
 <div class="app">
 
   <header>
+    <a href="index.html" class="back-to-main" title="메인으로 돌아가기">
+      <span aria-hidden="true">←</span><span class="label">MAIN</span>
+    </a>
     <div class="brand">
       <span class="brand-mark">CRP/01</span>
       <span class="brand-title">Batch Cropper</span>
