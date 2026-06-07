@@ -1,0 +1,2236 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>TAROT_GEN v1.0 — Tarot Card Generator</title>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Cinzel:wght@500;700;900&family=Cinzel+Decorative:wght@700;900&family=Noto+Sans+KR:wght@400;500;700;900&family=Noto+Serif+KR:wght@400;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+/* ============================================================
+   루트 변수 - 사용자 우선 팔레트
+   1차: #8889CD, #DDAACC, #CCAA88, #BB6688
+   2차: #884499, #EE1166, #FF6699, #00BBDD, #FF7722, #0077DD
+============================================================ */
+:root {
+    --c1: #8889CD; --c2: #DDAACC; --c3: #CCAA88; --c4: #BB6688;
+    --c5: #884499; --c6: #EE1166; --c7: #FF6699; --c8: #00BBDD; --c9: #FF7722; --c10: #0077DD;
+    --bg-page: #0d0d10;
+    --bg-panel: #16161b;
+    --bg-card: #1d1d23;
+    --bg-input: #0a0a0d;
+    --border: #2d2d35;
+    --text-main: #f0f0f5;
+    --text-sub: #999;
+    --accent: #8889CD;
+
+    /* 카드 내부용 (테마에 따라 변동) */
+    --card-bg: #f5efe2;
+    --card-text: #2a1810;
+    --card-sub: #6b4a30;
+    --card-border: #c4a878;
+    --card-accent: #8889CD;
+    --card-accent-2: #DDAACC;
+}
+.card-theme-dark {
+    --card-bg: #1a1518;
+    --card-text: #f0e5d5;
+    --card-sub: #b8a48c;
+    --card-border: #8b6d4a;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+    margin: 0; padding: 0; overflow: hidden; height: 100%;
+    overscroll-behavior: none;
+}
+body {
+    font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-page);
+    color: var(--text-main);
+    display: flex;
+    height: 100dvh;
+}
+
+/* ============================================================
+   레이아웃
+============================================================ */
+.controls-wrapper {
+    width: 440px; min-width: 340px; max-width: 800px;
+    height: 100%; overflow-y: auto; padding: 18px;
+    background: var(--bg-panel);
+    display: flex; flex-direction: column; gap: 14px;
+    flex-shrink: 0;
+}
+.resizer {
+    width: 6px; background: #1a1a1f; cursor: col-resize; flex-shrink: 0;
+    border-right: 1px solid #000; transition: background 0.2s; z-index: 100;
+}
+.resizer:hover, .resizer:active { background: var(--accent); }
+
+.preview-outer {
+    flex: 1; display: flex; flex-direction: column;
+    background: #08080a; min-width: 0; position: relative;
+}
+
+/* 상단 툴바 */
+.top-toolbar {
+    display: flex; flex-direction: column;
+    background: var(--bg-panel); padding: 12px 22px;
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    flex-shrink: 0; transition: 0.3s ease; z-index: 10;
+}
+.toolbar-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; gap: 12px; flex-wrap: wrap; }
+.toolbar-header h2 {
+    margin: 0; font-size: 20px; font-weight: 900; letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--c1), var(--c2), var(--c4));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.toolbar-header .material-icons { color: #aaa; font-size: 26px; transition: transform 0.3s; transform: rotate(180deg); }
+.top-toolbar.collapsed .toolbar-content { display: none; }
+.top-toolbar.collapsed .toolbar-header .material-icons { transform: rotate(0deg); }
+.top-toolbar:not(.collapsed) .mini-controls { display: none; }
+.mini-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mini-badge { display: flex; align-items: center; gap: 5px; background: var(--bg-card); padding: 4px 9px; border-radius: 6px; border: 1px solid var(--border); font-size: 11px; }
+.mini-btn { background: var(--border); color: #fff; border: none; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-size: 11px; font-weight: bold; }
+.mini-btn:hover { background: #444; }
+.mini-input { background: var(--bg-input); color: #fff; border: 1px solid #444; border-radius: 4px; padding: 3px; font-size: 11px; width: 45px; text-align: center; }
+
+.toolbar-content { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.toolbar-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.toolbar-row label { font-size: 12px; color: var(--text-sub); font-weight: 600; }
+
+/* 미리보기 영역 */
+.preview-wrapper {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    overflow: auto; padding: 30px; position: relative;
+}
+.preview-inner {
+    display: flex; align-items: center; justify-content: center;
+    transition: width 0.2s, height 0.2s;
+}
+#captureArea {
+    transform-origin: center center;
+    transition: transform 0.15s ease-out;
+}
+
+/* ============================================================
+   컨트롤 컴포넌트
+============================================================ */
+.section-title {
+    font-size: 13px; font-weight: 700; color: var(--c2);
+    text-transform: uppercase; letter-spacing: 1.5px;
+    padding-bottom: 6px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+}
+.section-title .material-icons-outlined { font-size: 18px; }
+
+.control-group {
+    background: var(--bg-card);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex; flex-direction: column; gap: 10px;
+    border: 1px solid var(--border);
+}
+
+.input-pair { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+.input-pair label { font-size: 11px; color: var(--text-sub); font-weight: 600; min-width: 50px; flex-shrink: 0; }
+.input-pair input[type="text"],
+.input-pair input[type="number"],
+.input-pair textarea,
+.input-pair select {
+    flex: 1; min-width: 0;
+    background: var(--bg-input);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 12px;
+    font-family: inherit;
+}
+.input-pair textarea { resize: vertical; min-height: 50px; font-family: inherit; }
+.input-pair input:focus, .input-pair textarea:focus, .input-pair select:focus {
+    outline: none; border-color: var(--c1);
+}
+.input-row { display: flex; gap: 8px; }
+
+button.primary {
+    background: linear-gradient(135deg, var(--c1), var(--c5));
+    color: white; border: none; border-radius: 8px;
+    padding: 10px 14px; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+button.primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(136,137,205,0.4); }
+button.primary:active { transform: translateY(0); }
+
+button.secondary {
+    background: var(--border); color: var(--text-main);
+    border: 1px solid #444; border-radius: 6px;
+    padding: 7px 10px; font-size: 12px; cursor: pointer;
+    display: flex; align-items: center; gap: 5px;
+}
+button.secondary:hover { background: #3a3a45; }
+button.secondary .material-icons-outlined { font-size: 16px; }
+
+.btn-icon {
+    background: var(--border); color: var(--text-main);
+    border: 1px solid #444; border-radius: 6px;
+    padding: 5px 8px; font-size: 12px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 4px;
+}
+.btn-icon:hover { background: #3a3a45; }
+
+/* 슬롯 패널 */
+.slot-panel {
+    display: flex; flex-direction: column; gap: 6px;
+    max-height: 200px; overflow-y: auto;
+}
+.slot-item {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg-input); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 8px; cursor: pointer;
+    transition: all 0.15s;
+}
+.slot-item:hover { border-color: #555; }
+.slot-item.active { border-color: var(--c1); background: rgba(136,137,205,0.1); }
+.slot-item .slot-num {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--c5); color: white; font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.slot-item.active .slot-num { background: var(--c1); }
+.slot-item .slot-name {
+    flex: 1; font-size: 12px; color: var(--text-main);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.slot-item .slot-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.slot-item .slot-actions button {
+    background: transparent; border: none; color: var(--text-sub);
+    cursor: pointer; padding: 2px; border-radius: 3px;
+    display: flex; align-items: center;
+}
+.slot-item .slot-actions button:hover { background: #333; color: var(--text-main); }
+.slot-item .slot-actions .material-icons-outlined { font-size: 16px; }
+
+/* 이미지 미리보기 + 컨트롤 */
+.image-controls { display: flex; flex-direction: column; gap: 8px; }
+.image-preview-row { display: flex; gap: 8px; align-items: center; }
+.image-thumb {
+    width: 60px; height: 60px; border-radius: 6px;
+    background: var(--bg-input); border: 1px dashed var(--border);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; flex-shrink: 0;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+.image-thumb:hover { border-color: var(--c1); }
+.image-thumb.drop-over {
+    border-color: var(--c2); border-style: solid;
+    background: rgba(221,170,204,0.1);
+}
+.image-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.image-thumb .material-icons-outlined { color: var(--text-sub); }
+
+/* 미리보기 드롭 표시 */
+.preview-wrapper.drop-over::after {
+    content: '이미지 드롭'; position: absolute;
+    inset: 12px; border: 2px dashed var(--c2);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--c2); font-weight: 700; font-size: 18px;
+    background: rgba(221,170,204,0.05);
+    pointer-events: none; z-index: 30;
+}
+.image-actions { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.image-actions button { font-size: 11px; padding: 4px 8px; }
+
+.range-row { display: flex; align-items: center; gap: 8px; }
+.range-row label { font-size: 11px; color: var(--text-sub); min-width: 35px; }
+.range-row input[type="range"] { flex: 1; }
+.range-row .range-val { font-size: 11px; color: var(--text-main); min-width: 32px; text-align: right; font-family: 'JetBrains Mono', monospace; }
+
+/* 프리셋 선택 */
+.preset-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.preset-row select {
+    flex: 1; min-width: 140px;
+    background: var(--bg-input);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 12px;
+}
+
+/* 정/역방향 토글 */
+.reversed-toggle {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg-input); padding: 8px 12px; border-radius: 8px;
+    border: 1px solid var(--border);
+    cursor: pointer; user-select: none;
+}
+.reversed-toggle .switch {
+    width: 36px; height: 20px; background: #333; border-radius: 10px;
+    position: relative; transition: background 0.2s;
+}
+.reversed-toggle .switch::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px; background: white; border-radius: 50%;
+    transition: transform 0.2s;
+}
+.reversed-toggle.active .switch { background: var(--c4); }
+.reversed-toggle.active .switch::after { transform: translateX(16px); }
+.reversed-toggle .lbl { font-size: 12px; font-weight: 600; flex: 1; }
+.reversed-toggle .lbl .desc { display: block; color: var(--text-sub); font-size: 10px; font-weight: 400; margin-top: 2px; }
+
+/* 줌 슬라이더 */
+.zoom-preset { background: var(--border); color: #aaa; border: 1px solid #444; border-radius: 4px; padding: 3px 7px; cursor: pointer; font-size: 11px; font-weight: bold; }
+.zoom-preset:hover { background: #444; color: #fff; }
+
+/* FAB - 모바일 다운로드 */
+.fab-container {
+    position: absolute; bottom: 20px; right: 20px; z-index: 50;
+    display: flex; flex-direction: column; gap: 10px;
+}
+.fab-btn {
+    width: 48px; height: 48px; border-radius: 50%; border: none;
+    background: linear-gradient(135deg, var(--c1), var(--c5));
+    color: white; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.15s;
+}
+.fab-btn:hover { transform: scale(1.05); }
+.fab-btn .material-icons { font-size: 22px; }
+
+/* ============================================================
+   카드 컨테이너 - 3D 플립
+============================================================ */
+.tarot-card-container {
+    width: 350px;
+    height: 600px;
+    perspective: 1600px;
+    cursor: pointer;
+}
+.tarot-card-flipper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.75s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+.tarot-card-container.flipped .tarot-card-flipper {
+    transform: rotateY(180deg);
+}
+.tarot-card-face {
+    position: absolute;
+    inset: 0;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+}
+.tarot-card-face.back {
+    transform: rotateY(180deg);
+}
+
+/* 캡처용: 플립 무효화 (다운로드 시 강제로 정면) */
+.tarot-card-container.capture-front .tarot-card-flipper { transform: rotateY(0deg) !important; transition: none !important; }
+.tarot-card-container.capture-back .tarot-card-flipper { transform: rotateY(180deg) !important; transition: none !important; }
+
+/* ============================================================
+   카드 디자인 - classic 모드 (라이더-웨이트 풍)
+============================================================ */
+.tarot-card {
+    width: 350px;
+    height: 600px;
+    background: var(--card-bg);
+    color: var(--card-text);
+    position: relative;
+    font-family: 'Cormorant Garamond', 'Noto Serif KR', serif;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    border-radius: 8px;
+}
+
+/* classic 모드 */
+.card-classic {
+    background: var(--card-bg);
+    padding: 16px;
+}
+.card-classic .tc-frame {
+    position: absolute; inset: 12px;
+    border: 2px solid var(--card-border);
+    border-radius: 4px;
+    pointer-events: none;
+}
+.card-classic .tc-frame-inner {
+    position: absolute; inset: 18px;
+    border: 1px solid var(--card-border);
+    border-radius: 2px;
+    opacity: 0.6;
+    pointer-events: none;
+}
+.card-classic .tc-corner {
+    position: absolute; width: 24px; height: 24px;
+    border: 1.5px solid var(--card-accent);
+    pointer-events: none;
+}
+.card-classic .tc-corner.tl { top: 8px; left: 8px; border-right: none; border-bottom: none; }
+.card-classic .tc-corner.tr { top: 8px; right: 8px; border-left: none; border-bottom: none; }
+.card-classic .tc-corner.bl { bottom: 8px; left: 8px; border-right: none; border-top: none; }
+.card-classic .tc-corner.br { bottom: 8px; right: 8px; border-left: none; border-top: none; }
+
+.card-classic .tc-inner {
+    position: relative; z-index: 2;
+    width: 100%; height: 100%;
+    display: grid;
+    grid-template-rows: 50px 1fr 64px 56px 26px;
+    padding: 22px 26px 18px;
+    gap: 4px;
+}
+
+/* 상단: 로마 숫자 */
+.card-classic .tc-roman {
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: var(--card-accent);
+    align-self: center;
+    position: relative;
+}
+.card-classic .tc-roman::before,
+.card-classic .tc-roman::after {
+    content: ''; position: absolute; top: 50%;
+    width: 30px; height: 1px;
+    background: var(--card-accent);
+    opacity: 0.5;
+}
+.card-classic .tc-roman::before { right: calc(50% + 35px); }
+.card-classic .tc-roman::after { left: calc(50% + 35px); }
+
+/* 이미지 영역 */
+.card-classic .tc-image {
+    position: relative;
+    margin: 8px 0;
+    border: 1.5px solid var(--card-border);
+    border-radius: 2px;
+    background: linear-gradient(135deg, rgba(0,0,0,0.04), rgba(0,0,0,0.08));
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+}
+.card-classic .tc-image .tc-img-inner {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.card-classic .tc-image .tc-image-placeholder {
+    color: var(--card-sub);
+    font-size: 14px;
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    opacity: 0.5;
+    text-align: center;
+    padding: 20px;
+}
+
+/* 카드명 배너 */
+.card-classic .tc-banner {
+    align-self: end;
+    text-align: center;
+    border-top: 1.5px double var(--card-border);
+    border-bottom: 1.5px double var(--card-border);
+    padding: 10px 4px;
+    margin-top: 8px;
+}
+.card-classic .tc-name-en {
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--card-text);
+    line-height: 1.1;
+}
+.card-classic .tc-name-kr {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--card-sub);
+    margin-top: 2px;
+    letter-spacing: 3px;
+}
+
+/* 키워드 */
+.card-classic .tc-keywords {
+    text-align: center;
+    align-self: center;
+}
+.card-classic .tc-keywords-label {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--card-accent);
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    opacity: 0.85;
+}
+.card-classic .tc-keywords-text {
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 11px;
+    color: var(--card-text);
+    line-height: 1.45;
+    padding: 0 8px;
+}
+
+/* 점성술 (grid 마지막 행) */
+.card-classic .tc-astro {
+    align-self: center;
+    display: flex; justify-content: center; gap: 14px;
+    font-size: 10.5px;
+    color: var(--card-sub);
+    font-family: 'Cinzel', serif;
+    letter-spacing: 1px;
+}
+.card-classic .tc-astro span {
+    display: inline-flex; align-items: center; gap: 3px;
+}
+.card-classic .tc-astro .sym {
+    font-size: 12px; color: var(--card-accent);
+}
+.card-classic .tc-astro-empty {
+    /* 빈 셀일 때도 grid row 유지 */
+    min-height: 1px;
+}
+
+/* 역방향 */
+.tarot-card.reversed .tc-inner {
+    transform: rotate(180deg);
+}
+.tarot-card.reversed .tc-reverse-mark {
+    position: absolute;
+    top: 14px; right: 14px;
+    z-index: 3;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--c4);
+    color: white;
+    font-size: 13px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cinzel', serif;
+}
+
+/* 뒷면도 역방향 (물리적 정합 — 카드 뒤집으면 둘 다 거꾸로) */
+.card-classic-back.reversed .tcb-inner {
+    transform: rotate(180deg);
+}
+.card-classic-back.reversed .tc-reverse-mark {
+    position: absolute;
+    top: 14px; right: 14px;
+    z-index: 3;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--c4);
+    color: white;
+    font-size: 13px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cinzel', serif;
+}
+
+/* ============================================================
+   카드 뒷면 - 해석문 표시 (classic 톤 유지)
+============================================================ */
+.card-classic-back {
+    background: var(--card-bg);
+    padding: 16px;
+}
+.card-classic-back .tc-frame { position: absolute; inset: 12px; border: 2px solid var(--card-border); border-radius: 4px; pointer-events: none; }
+.card-classic-back .tc-frame-inner { position: absolute; inset: 18px; border: 1px solid var(--card-border); border-radius: 2px; opacity: 0.6; pointer-events: none; }
+.card-classic-back .tc-corner { position: absolute; width: 24px; height: 24px; border: 1.5px solid var(--card-accent); pointer-events: none; }
+.card-classic-back .tc-corner.tl { top: 8px; left: 8px; border-right: none; border-bottom: none; }
+.card-classic-back .tc-corner.tr { top: 8px; right: 8px; border-left: none; border-bottom: none; }
+.card-classic-back .tc-corner.bl { bottom: 8px; left: 8px; border-right: none; border-top: none; }
+.card-classic-back .tc-corner.br { bottom: 8px; right: 8px; border-left: none; border-top: none; }
+
+.card-classic-back .tcb-inner {
+    position: relative; z-index: 2;
+    width: 100%; height: 100%;
+    display: grid;
+    grid-template-rows: 50px 70px 1fr 30px;
+    padding: 22px 30px 18px;
+    gap: 8px;
+}
+/* 상단 로마숫자 (앞면과 동일) */
+.card-classic-back .tcb-roman {
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: var(--card-accent);
+    align-self: center;
+    position: relative;
+}
+.card-classic-back .tcb-roman::before, .card-classic-back .tcb-roman::after {
+    content: ''; position: absolute; top: 50%;
+    width: 30px; height: 1px;
+    background: var(--card-accent); opacity: 0.5;
+}
+.card-classic-back .tcb-roman::before { right: calc(50% + 35px); }
+.card-classic-back .tcb-roman::after  { left:  calc(50% + 35px); }
+
+/* 카드명 (앞면보다 작게) */
+.card-classic-back .tcb-name {
+    text-align: center;
+    border-top: 1.5px double var(--card-border);
+    border-bottom: 1.5px double var(--card-border);
+    padding: 8px 4px;
+    align-self: center;
+}
+.card-classic-back .tcb-name-en {
+    font-family: 'Cinzel', serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--card-text);
+}
+.card-classic-back .tcb-name-kr {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--card-sub);
+    margin-top: 2px;
+    letter-spacing: 3px;
+}
+
+/* 해석문 본문 */
+.card-classic-back .tcb-description {
+    font-family: 'Noto Serif KR', 'Cormorant Garamond', serif;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--card-text);
+    text-align: justify;
+    padding: 4px 4px;
+    overflow: hidden;
+    align-self: start;
+}
+.card-classic-back .tcb-desc-label {
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--card-accent);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    opacity: 0.85;
+}
+.card-classic-back .tcb-desc-text {
+    font-style: italic;
+}
+.card-classic-back .tcb-desc-empty {
+    text-align: center;
+    color: var(--card-sub);
+    font-style: italic;
+    opacity: 0.5;
+    padding-top: 40px;
+    font-size: 12px;
+}
+
+/* 하단 점성술 (앞면과 동일 구성) */
+.card-classic-back .tcb-astro {
+    align-self: center;
+    display: flex; justify-content: center; gap: 14px;
+    font-size: 10.5px;
+    color: var(--card-sub);
+    font-family: 'Cinzel', serif;
+    letter-spacing: 1px;
+}
+.card-classic-back .tcb-astro span {
+    display: inline-flex; align-items: center; gap: 3px;
+}
+.card-classic-back .tcb-astro .sym {
+    font-size: 12px; color: var(--card-accent);
+}
+
+/* ============================================================
+   모바일 하단 액션바 + 풀스크린 토글
+============================================================ */
+.mob-bar {
+    display: none;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 60px; z-index: 9999;
+    background: rgba(13,13,16,0.97); backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.mob-bar button {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 2px;
+    background: none; border: none; cursor: pointer;
+    color: var(--text-sub); font-family: inherit;
+    font-size: 10px; font-weight: 700; padding: 6px 2px;
+    -webkit-tap-highlight-color: transparent;
+}
+.mob-bar button .material-icons { font-size: 22px; color: var(--c1); }
+.mob-bar button.primary .material-icons { color: var(--c4); }
+.mob-bar button.accent .material-icons { color: var(--c2); }
+.mob-bar button:active { background: rgba(136,137,205,0.1); }
+
+/* ============================================================
+   모바일 대응
+============================================================ */
+@media (max-width: 768px) {
+    body { flex-direction: column; height: 100dvh; }
+    .controls-wrapper {
+        width: 100% !important; max-width: 100% !important; min-width: 0 !important;
+        height: 50dvh;
+        padding: 12px; padding-bottom: 70px;
+    }
+    .resizer { display: none; }
+    .preview-outer { height: 50dvh; }
+    .preview-wrapper {
+        padding: 16px;
+        touch-action: pan-x pan-y;
+    }
+    .fab-container { display: none !important; }
+    .mob-bar { display: flex; }
+    .top-toolbar { padding: 8px 14px; }
+    .toolbar-header h2 { font-size: 16px; }
+    .toolbar-row { gap: 8px; flex-wrap: wrap; }
+    .toolbar-row input[type="range"] { width: 90px !important; flex: 0 0 90px; }
+    .zoom-preset { padding: 3px 6px; font-size: 10px; }
+    .mini-input { width: 38px; }
+
+    /* 풀스크린 토글 */
+    body.fs-preview .controls-wrapper { display: none; }
+    body.fs-preview .preview-outer { height: calc(100dvh - 60px); }
+    body.fs-controls .preview-outer { display: none; }
+    body.fs-controls .controls-wrapper { height: calc(100dvh - 60px); }
+}
+
+/* ============================================================
+   크롭 모달
+============================================================ */
+.modal-overlay {
+    position: fixed; inset: 0; z-index: 5000;
+    background: rgba(0,0,0,0.78); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+}
+.modal-overlay.hidden { display: none; }
+.crop-modal {
+    background: var(--bg-panel); border: 1px solid var(--border);
+    border-radius: 12px; width: 100%; max-width: 720px;
+    max-height: 92dvh; display: flex; flex-direction: column;
+    box-shadow: 0 30px 70px rgba(0,0,0,0.7);
+}
+.crop-header {
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+}
+.crop-header h3 {
+    margin: 0; font-size: 15px; font-weight: 800;
+    background: linear-gradient(135deg, var(--c1), var(--c2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.crop-header .x-close {
+    background: transparent; border: none; color: var(--text-sub);
+    cursor: pointer; padding: 4px; border-radius: 4px;
+    display: flex; align-items: center;
+}
+.crop-header .x-close:hover { background: var(--bg-input); color: var(--c6); }
+
+.crop-stage {
+    flex: 1; position: relative; overflow: hidden;
+    background: #000 repeating-linear-gradient(45deg, transparent 0 10px, rgba(255,255,255,0.02) 10px 20px);
+    min-height: 320px; max-height: 60dvh;
+    display: flex; align-items: center; justify-content: center;
+}
+.crop-img-wrap {
+    position: relative; user-select: none;
+    touch-action: none;
+}
+.crop-img-wrap img {
+    display: block; max-width: 100%; max-height: 60dvh;
+    pointer-events: none; -webkit-user-drag: none;
+}
+.crop-box {
+    position: absolute; border: 1.5px solid var(--c2);
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.55), 0 0 0 1px rgba(221,170,204,0.3) inset;
+    cursor: move; touch-action: none;
+}
+.crop-box::before, .crop-box::after {
+    content: ''; position: absolute; background: rgba(221,170,204,0.4);
+    pointer-events: none;
+}
+.crop-box::before { top: 0; bottom: 0; left: 33.333%; width: 1px; box-shadow: calc(33.333% + 0.5px) 0 0 rgba(221,170,204,0.4); }
+.crop-box::after { left: 0; right: 0; top: 33.333%; height: 1px; box-shadow: 0 calc(33.333% + 0.5px) 0 rgba(221,170,204,0.4); }
+.crop-handle {
+    position: absolute; width: 14px; height: 14px;
+    background: var(--bg-panel); border: 1.5px solid var(--c2);
+    border-radius: 2px; z-index: 2;
+}
+.crop-handle.nw { top: -7px; left: -7px; cursor: nwse-resize; }
+.crop-handle.n  { top: -7px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+.crop-handle.ne { top: -7px; right: -7px; cursor: nesw-resize; }
+.crop-handle.e  { top: 50%; right: -7px; transform: translateY(-50%); cursor: ew-resize; }
+.crop-handle.se { bottom: -7px; right: -7px; cursor: nwse-resize; }
+.crop-handle.s  { bottom: -7px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+.crop-handle.sw { bottom: -7px; left: -7px; cursor: nesw-resize; }
+.crop-handle.w  { top: 50%; left: -7px; transform: translateY(-50%); cursor: ew-resize; }
+@media (max-width: 767px) {
+    .crop-handle { width: 22px; height: 22px; border-width: 2px; }
+    .crop-handle.nw { top: -11px; left: -11px; }
+    .crop-handle.n  { top: -11px; }
+    .crop-handle.ne { top: -11px; right: -11px; }
+    .crop-handle.e  { right: -11px; }
+    .crop-handle.se { bottom: -11px; right: -11px; }
+    .crop-handle.s  { bottom: -11px; }
+    .crop-handle.sw { bottom: -11px; left: -11px; }
+    .crop-handle.w  { left: -11px; }
+}
+
+.crop-toolbar {
+    padding: 12px 18px; border-top: 1px solid var(--border);
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+.crop-toolbar .toolbar-label {
+    font-size: 12px; color: var(--text-sub); font-weight: 600;
+}
+.crop-toolbar select {
+    background: var(--bg-input); color: var(--text-main);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 8px; font-size: 12px; font-family: inherit;
+}
+.crop-toolbar .btn {
+    border-radius: 6px; padding: 7px 12px; font-size: 12px;
+    font-weight: 700; cursor: pointer; border: 1px solid transparent;
+    font-family: inherit;
+}
+.crop-toolbar .btn-ghost {
+    background: var(--border); color: var(--text-main); border-color: #444;
+}
+.crop-toolbar .btn-ghost:hover { background: #3a3a45; }
+.crop-toolbar .btn-primary {
+    background: linear-gradient(135deg, var(--c1), var(--c5)); color: white;
+}
+.crop-toolbar .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(136,137,205,0.4); }
+.crop-toolbar .btn-sm { padding: 5px 9px; font-size: 11px; }
+
+@media (max-width: 767px) {
+    .crop-modal { max-width: 100%; max-height: 95dvh; }
+    .crop-toolbar { padding: 10px 12px; gap: 6px; }
+    .crop-toolbar .btn { padding: 6px 10px; }
+}
+
+/* 스크롤바 */
+.controls-wrapper::-webkit-scrollbar, .slot-panel::-webkit-scrollbar { width: 6px; }
+.controls-wrapper::-webkit-scrollbar-track, .slot-panel::-webkit-scrollbar-track { background: var(--bg-panel); }
+.controls-wrapper::-webkit-scrollbar-thumb, .slot-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.controls-wrapper::-webkit-scrollbar-thumb:hover, .slot-panel::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     좌측 컨트롤 패널
+============================================================ -->
+<div class="controls-wrapper" id="controlsWrapper">
+    <!-- 슬롯 -->
+    <div class="control-group">
+        <div class="section-title">
+            <span class="material-icons-outlined">style</span>
+            슬롯 (카드 묶음)
+        </div>
+        <div class="slot-panel" id="slotPanel"></div>
+        <div class="input-row">
+            <button class="secondary" onclick="addSlot()" style="flex:1;">
+                <span class="material-icons-outlined">add</span> 새 카드
+            </button>
+            <button class="secondary" onclick="duplicateCurrentSlot()" style="flex:1;">
+                <span class="material-icons-outlined">content_copy</span> 복제
+            </button>
+        </div>
+    </div>
+
+    <!-- 프리셋 선택 -->
+    <div class="control-group">
+        <div class="section-title">
+            <span class="material-icons-outlined">auto_awesome</span>
+            메이저 아르카나 프리셋
+        </div>
+        <div class="preset-row">
+            <select id="presetSelect" onchange="applyPreset()">
+                <option value="">— 카드 선택 —</option>
+            </select>
+            <button class="secondary" onclick="applyPreset()" title="다시 적용">
+                <span class="material-icons-outlined">refresh</span>
+            </button>
+        </div>
+        <div class="reversed-toggle" id="reversedToggle" onclick="toggleReversed()">
+            <div class="switch"></div>
+            <div class="lbl">
+                역방향
+                <span class="desc">카드 180° 회전 + 역방향 키워드 표시</span>
+            </div>
+        </div>
+        <button class="secondary" id="flipBtn" onclick="flipCard()" style="justify-content:center;">
+            <span class="material-icons-outlined">flip_to_back</span> 뒷면 보기
+        </button>
+    </div>
+
+    <!-- 카드 정보 -->
+    <div class="control-group">
+        <div class="section-title">
+            <span class="material-icons-outlined">edit_note</span>
+            카드 정보
+        </div>
+        <div class="input-pair">
+            <label>번호</label>
+            <input type="text" data-field="roman" placeholder="0, I, II..." oninput="onFormInput()">
+        </div>
+        <div class="input-pair">
+            <label>영문명</label>
+            <input type="text" data-field="nameEn" placeholder="The Fool" oninput="onFormInput()">
+        </div>
+        <div class="input-pair">
+            <label>한글명</label>
+            <input type="text" data-field="nameKr" placeholder="바보" oninput="onFormInput()">
+        </div>
+        <div class="input-pair">
+            <label>정방향</label>
+            <input type="text" data-field="keywordsUp" placeholder="시작, 순수, 모험, 자유" oninput="onFormInput()">
+        </div>
+        <div class="input-pair">
+            <label>역방향</label>
+            <input type="text" data-field="keywordsRev" placeholder="무모함, 어리석음, 위험" oninput="onFormInput()">
+        </div>
+        <div class="input-pair" style="align-items:flex-start;">
+            <label style="padding-top:6px;">해석문</label>
+            <textarea data-field="description" placeholder="카드 뒷면에 표시될 1~3문장 설명" oninput="onFormInput()" style="min-height:70px;"></textarea>
+        </div>
+    </div>
+
+    <!-- 점성술 필드 -->
+    <div class="control-group">
+        <div class="section-title">
+            <span class="material-icons-outlined">brightness_2</span>
+            점성술 대응
+        </div>
+        <div class="input-pair">
+            <label>원소</label>
+            <input type="text" data-field="element" placeholder="공기 / 물 / 불 / 흙" oninput="onFormInput()">
+        </div>
+        <div class="input-pair">
+            <label>천체</label>
+            <input type="text" data-field="planet" placeholder="천왕성, 수성..." oninput="onFormInput()">
+        </div>
+        <div class="input-pair">
+            <label>별자리</label>
+            <input type="text" data-field="zodiac" placeholder="양자리, 황소자리..." oninput="onFormInput()">
+        </div>
+    </div>
+
+    <!-- 이미지 -->
+    <div class="control-group">
+        <div class="section-title">
+            <span class="material-icons-outlined">image</span>
+            이미지
+            <span style="margin-left:auto;font-size:9px;font-weight:400;color:var(--text-sub);letter-spacing:0;text-transform:none;">드롭 · 붙여넣기 · 업로드</span>
+        </div>
+        <div class="image-controls">
+            <div class="image-preview-row">
+                <div class="image-thumb" id="imgThumb">
+                    <span class="material-icons-outlined">image_not_supported</span>
+                </div>
+                <div class="image-actions">
+                    <button class="secondary" onclick="document.getElementById('imgFileInput').click()">
+                        <span class="material-icons-outlined">upload</span> 업로드
+                    </button>
+                    <button class="secondary" onclick="recropImage()" title="원본에서 다시 크롭">
+                        <span class="material-icons-outlined">crop</span> 다시 크롭
+                    </button>
+                    <button class="secondary" onclick="clearImage()">
+                        <span class="material-icons-outlined">delete</span> 제거
+                    </button>
+                </div>
+                <input type="file" id="imgFileInput" accept="image/*" style="display:none;" onchange="onImageUpload(event)">
+            </div>
+            <div class="range-row">
+                <label>줌</label>
+                <input type="range" id="imgZoomRange" min="50" max="300" value="100" oninput="onImgAdjust()">
+                <span class="range-val" id="imgZoomVal">100%</span>
+            </div>
+            <div class="range-row">
+                <label>X</label>
+                <input type="range" id="imgXRange" min="0" max="100" value="50" oninput="onImgAdjust()">
+                <span class="range-val" id="imgXVal">50%</span>
+            </div>
+            <div class="range-row">
+                <label>Y</label>
+                <input type="range" id="imgYRange" min="0" max="100" value="50" oninput="onImgAdjust()">
+                <span class="range-val" id="imgYVal">50%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 테마 + 색상 -->
+    <div class="control-group">
+        <div class="section-title">
+            <span class="material-icons-outlined">palette</span>
+            테마 / 색상
+        </div>
+        <div class="input-row">
+            <button class="secondary" onclick="setCardTheme(false)" style="flex:1;">
+                <span class="material-icons-outlined">light_mode</span> 라이트
+            </button>
+            <button class="secondary" onclick="setCardTheme(true)" style="flex:1;">
+                <span class="material-icons-outlined">dark_mode</span> 다크
+            </button>
+        </div>
+        <div class="input-pair">
+            <label>강조1</label>
+            <input type="color" id="colorC1" value="#8889CD" oninput="onColorChange()" style="height:32px;cursor:pointer;">
+            <label>강조2</label>
+            <input type="color" id="colorC2" value="#DDAACC" oninput="onColorChange()" style="height:32px;cursor:pointer;">
+        </div>
+        <div class="input-row">
+            <button class="btn-icon" onclick="setColorPreset('#8889CD','#DDAACC')" style="background:linear-gradient(90deg,#8889CD,#DDAACC);color:white;flex:1;">기본</button>
+            <button class="btn-icon" onclick="setColorPreset('#CCAA88','#BB6688')" style="background:linear-gradient(90deg,#CCAA88,#BB6688);color:white;flex:1;">대지</button>
+            <button class="btn-icon" onclick="setColorPreset('#884499','#EE1166')" style="background:linear-gradient(90deg,#884499,#EE1166);color:white;flex:1;">정열</button>
+            <button class="btn-icon" onclick="setColorPreset('#0077DD','#00BBDD')" style="background:linear-gradient(90deg,#0077DD,#00BBDD);color:white;flex:1;">바다</button>
+        </div>
+    </div>
+
+    <!-- 다운로드 -->
+    <div class="control-group">
+        <div class="section-title">
+            <span class="material-icons-outlined">download</span>
+            다운로드
+        </div>
+        <div class="input-row">
+            <button class="primary" onclick="downloadFront()" style="flex:1;">
+                <span class="material-icons">image</span> 앞면
+            </button>
+            <button class="primary" onclick="downloadBack()" style="flex:1;background:linear-gradient(135deg,var(--c2),var(--c4));">
+                <span class="material-icons">notes</span> 뒷면
+            </button>
+        </div>
+        <button class="primary" onclick="downloadBoth()" style="background:linear-gradient(135deg,var(--c3),var(--c4));">
+            <span class="material-icons">collections</span> 양면 ZIP
+        </button>
+        <button class="primary" onclick="downloadAllZip()" style="background:linear-gradient(135deg,var(--c4),var(--c6));">
+            <span class="material-icons">folder_zip</span> 전체 슬롯 ZIP (앞+뒷)
+        </button>
+    </div>
+
+    <div style="text-align:center;color:var(--text-sub);font-size:10px;padding:4px;">
+        TAROT_GEN v1.0 — Major Arcana / Classic
+    </div>
+</div>
+
+<div class="resizer" id="resizer"></div>
+
+<!-- ============================================================
+     크롭 모달
+============================================================ -->
+<div class="modal-overlay hidden" id="cropModal">
+    <div class="crop-modal">
+        <div class="crop-header">
+            <h3>✂️ 이미지 크롭</h3>
+            <button class="x-close" onclick="closeCropModal()" title="닫기">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <div class="crop-stage" id="cropStage">
+            <div class="crop-img-wrap" id="cropImgWrap">
+                <img id="cropImg" alt="">
+                <div class="crop-box" id="cropBox">
+                    <div class="crop-handle nw" data-h="nw"></div>
+                    <div class="crop-handle n"  data-h="n"></div>
+                    <div class="crop-handle ne" data-h="ne"></div>
+                    <div class="crop-handle e"  data-h="e"></div>
+                    <div class="crop-handle se" data-h="se"></div>
+                    <div class="crop-handle s"  data-h="s"></div>
+                    <div class="crop-handle sw" data-h="sw"></div>
+                    <div class="crop-handle w"  data-h="w"></div>
+                </div>
+            </div>
+        </div>
+        <div class="crop-toolbar">
+            <span class="toolbar-label">비율</span>
+            <select id="cropRatio" onchange="onCropRatioChange()">
+                <option value="free">자유</option>
+                <option value="1:1">1:1 (정사각)</option>
+                <option value="4:5" selected>4:5 (타로 권장)</option>
+                <option value="6:7">6:7 (타로 정확)</option>
+                <option value="3:4">3:4 (세로형)</option>
+                <option value="4:3">4:3 (가로형)</option>
+                <option value="16:9">16:9 (와이드)</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="resetCropBox()">전체</button>
+            <div style="flex:1;"></div>
+            <button class="btn btn-ghost" onclick="closeCropModal()">취소</button>
+            <button class="btn btn-primary" onclick="applyCrop()">✓ 적용</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     모바일 하단 액션바 (768px 이하에서만 표시)
+============================================================ -->
+<nav class="mob-bar" id="mobBar">
+    <button onclick="addSlot()">
+        <span class="material-icons">add</span>
+        <span>새 카드</span>
+    </button>
+    <button onclick="document.getElementById('imgFileInput').click()">
+        <span class="material-icons">add_photo_alternate</span>
+        <span>이미지</span>
+    </button>
+    <button class="accent" onclick="toggleFsMode()">
+        <span class="material-icons" id="mobFsIcon">fullscreen</span>
+        <span id="mobFsLabel">50:50</span>
+    </button>
+    <button class="primary" onclick="downloadCard()">
+        <span class="material-icons">download</span>
+        <span>저장</span>
+    </button>
+    <button class="primary" onclick="downloadAllZip()">
+        <span class="material-icons">folder_zip</span>
+        <span>ZIP</span>
+    </button>
+</nav>
+
+<!-- ============================================================
+     우측 미리보기 영역
+============================================================ -->
+<div class="preview-outer">
+    <div class="top-toolbar collapsed" id="topToolbar">
+        <div class="toolbar-header" onclick="toggleToolbar()">
+            <h2>🃏 TAROT_GEN</h2>
+            <div class="mini-controls">
+                <div class="mini-badge">
+                    <span class="material-icons-outlined" style="font-size:14px;">zoom_in</span>
+                    <span id="miniZoom">80%</span>
+                </div>
+                <button class="mini-btn" onclick="event.stopPropagation();setZoom(50)">50</button>
+                <button class="mini-btn" onclick="event.stopPropagation();setZoom(80)">80</button>
+                <button class="mini-btn" onclick="event.stopPropagation();fitZoom()">FIT</button>
+            </div>
+            <span class="material-icons">expand_more</span>
+        </div>
+        <div class="toolbar-content">
+            <div class="toolbar-row">
+                <label>줌</label>
+                <input type="range" id="inpZoom" min="20" max="200" value="80" oninput="applyZoom()" style="flex:1;max-width:200px;">
+                <input type="number" id="numZoom" min="20" max="200" value="80" oninput="syncZoom()" class="mini-input">
+                <span style="font-size:12px;color:var(--text-sub);">%</span>
+                <button class="zoom-preset" onclick="setZoom(50)">50</button>
+                <button class="zoom-preset" onclick="setZoom(80)">80</button>
+                <button class="zoom-preset" onclick="setZoom(100)">100</button>
+                <button class="zoom-preset" onclick="fitZoom()">FIT</button>
+            </div>
+            <div class="toolbar-row">
+                <label>페이지 테마</label>
+                <button class="zoom-preset" onclick="setPageTheme('dark')">다크</button>
+                <button class="zoom-preset" onclick="setPageTheme('light')">라이트</button>
+            </div>
+        </div>
+    </div>
+    <div class="preview-wrapper" id="previewWrapper">
+        <div class="preview-inner">
+            <div id="captureArea"></div>
+        </div>
+    </div>
+    <div class="fab-container">
+        <button class="fab-btn" onclick="downloadCard()" title="현재 카드 PNG 다운로드">
+            <span class="material-icons">download</span>
+        </button>
+        <button class="fab-btn" style="background:linear-gradient(135deg,var(--c4),var(--c6));" onclick="downloadAllZip()" title="전체 ZIP">
+            <span class="material-icons">folder_zip</span>
+        </button>
+    </div>
+</div>
+
+<script>
+/* ============================================================
+   메이저 아르카나 22장 프리셋 데이터
+   - 한글명/키워드: 가장 통용되는 라이더-웨이트 가이드북 기반 표기
+============================================================ */
+const MAJOR_ARCANA = [
+    { roman: '0',     nameEn: 'The Fool',           nameKr: '바보',           element: '공기', planet: '천왕성', zodiac: '',
+      keywordsUp: '시작, 순수, 모험, 자유',         keywordsRev: '무모함, 어리석음, 위험',
+      description: '새로운 시작과 무한한 가능성을 상징한다. 절벽 끝에서 한 발을 내디디기 직전, 모든 것이 열려 있는 순간이다. 두려움 없이 미지로 향하는 순수한 용기.' },
+    { roman: 'I',     nameEn: 'The Magician',       nameKr: '마법사',         element: '',     planet: '수성',   zodiac: '',
+      keywordsUp: '의지, 창조, 기술, 자신감',       keywordsRev: '속임수, 미숙함, 망설임',
+      description: '의지와 집중으로 무엇이든 현실로 만드는 카드. 네 가지 원소가 모두 갖춰져 있으니 행동할 때다. 위는 아래와 같고, 시작된 것은 곧 형태를 얻는다.' },
+    { roman: 'II',    nameEn: 'The High Priestess', nameKr: '여사제',         element: '',     planet: '달',     zodiac: '',
+      keywordsUp: '직관, 신비, 내면, 비밀',         keywordsRev: '무지, 표면적, 감춰진 진실',
+      description: '이성보다 직관, 말보다 침묵의 지혜를 가르치는 카드. 답은 이미 내면에 있다. 베일 너머의 진실은 서두르지 않고 기다리는 자에게만 드러난다.' },
+    { roman: 'III',   nameEn: 'The Empress',        nameKr: '여황제',         element: '',     planet: '금성',   zodiac: '',
+      keywordsUp: '풍요, 모성, 창조, 자연',         keywordsRev: '의존, 막힘, 비생산',
+      description: '풍요와 모성의 카드. 창조와 양육, 자연과의 연결을 통해 결실을 맺는다. 감각의 기쁨과 사랑의 충만함이 자라난다.' },
+    { roman: 'IV',    nameEn: 'The Emperor',        nameKr: '황제',           element: '',     planet: '',       zodiac: '양자리',
+      keywordsUp: '권위, 안정, 구조, 통제',         keywordsRev: '독재, 경직, 미숙함',
+      description: '권위와 안정의 카드. 명확한 구조와 규율이 성공을 가져온다. 다스리는 자는 먼저 자신을 다스려야 한다.' },
+    { roman: 'V',     nameEn: 'The Hierophant',     nameKr: '교황',           element: '',     planet: '',       zodiac: '황소자리',
+      keywordsUp: '전통, 신념, 가르침, 제도',       keywordsRev: '반항, 위선, 독단',
+      description: '전통과 가르침의 카드. 검증된 지혜와 제도의 가치를 인정한다. 스승은 외부에 있을 수도, 내면에 있을 수도 있다.' },
+    { roman: 'VI',    nameEn: 'The Lovers',         nameKr: '연인',           element: '',     planet: '',       zodiac: '쌍둥이자리',
+      keywordsUp: '사랑, 선택, 결합, 조화',         keywordsRev: '갈등, 분리, 잘못된 선택',
+      description: '사랑과 선택의 카드. 진정한 결합은 깊은 자기이해에서 비롯된다. 모든 선택에는 길이 갈라지고, 그 길 위에서 사람이 만들어진다.' },
+    { roman: 'VII',   nameEn: 'The Chariot',        nameKr: '전차',           element: '',     planet: '',       zodiac: '게자리',
+      keywordsUp: '의지, 승리, 추진, 통제',         keywordsRev: '폭주, 방향상실, 좌절',
+      description: '의지와 승리의 카드. 상반된 두 힘을 조화시켜 목표를 향해 나아간다. 통제하지 않으면 끌려간다.' },
+    { roman: 'VIII',  nameEn: 'Strength',           nameKr: '힘',             element: '',     planet: '',       zodiac: '사자자리',
+      keywordsUp: '용기, 인내, 자제, 내면의 힘',   keywordsRev: '약함, 자신감 부족, 의심',
+      description: '내면의 힘과 부드러운 용기. 폭력이 아닌 인내로 두려움을 다스린다. 사자의 입을 여는 손은 강한 손이 아니라 떨리지 않는 손이다.' },
+    { roman: 'IX',    nameEn: 'The Hermit',         nameKr: '은둔자',         element: '',     planet: '',       zodiac: '처녀자리',
+      keywordsUp: '성찰, 고독, 지혜, 탐구',         keywordsRev: '고립, 외로움, 회피',
+      description: '고독한 성찰을 통한 지혜. 내면의 빛이 길을 비춘다. 침묵 속에서만 들리는 목소리가 있다.' },
+    { roman: 'X',     nameEn: 'Wheel of Fortune',   nameKr: '운명의 수레바퀴', element: '',     planet: '목성',   zodiac: '',
+      keywordsUp: '변화, 운명, 순환, 행운',         keywordsRev: '불운, 정체, 통제불능',
+      description: '운명의 순환과 변화. 좋은 일도 나쁜 일도 영원하지 않다. 수레바퀴는 멈추지 않고, 위에 있는 자도 아래에 있는 자도 곧 자리를 바꾼다.' },
+    { roman: 'XI',    nameEn: 'Justice',            nameKr: '정의',           element: '',     planet: '',       zodiac: '천칭자리',
+      keywordsUp: '공정, 진실, 법, 책임',           keywordsRev: '부당, 편견, 무책임',
+      description: '진실과 공정의 카드. 행동에는 응당한 결과가 따른다. 저울은 감정을 모르고, 칼은 변명을 듣지 않는다.' },
+    { roman: 'XII',   nameEn: 'The Hanged Man',     nameKr: '매달린 사람',     element: '물',   planet: '해왕성', zodiac: '',
+      keywordsUp: '희생, 관점전환, 정지, 통찰',     keywordsRev: '정체, 집착, 무의미한 희생',
+      description: '자발적 희생과 관점의 전환. 멈춤이 곧 새로운 통찰의 시작이다. 거꾸로 매달려야만 보이는 세계가 있다.' },
+    { roman: 'XIII',  nameEn: 'Death',              nameKr: '죽음',           element: '',     planet: '',       zodiac: '전갈자리',
+      keywordsUp: '종결, 변화, 변형, 재탄생',       keywordsRev: '저항, 정체, 두려움',
+      description: '종결과 변형. 끝은 새로운 시작을 위한 필연적 과정이다. 놓아주지 않으면 다음으로 갈 수 없다.' },
+    { roman: 'XIV',   nameEn: 'Temperance',         nameKr: '절제',           element: '',     planet: '',       zodiac: '사수자리',
+      keywordsUp: '균형, 조화, 인내, 절제',         keywordsRev: '불균형, 과잉, 충돌',
+      description: '균형과 조화. 극단을 피하고 중도를 걷는다. 두 잔 사이를 흐르는 물처럼, 멈추지 않되 넘치지 않는다.' },
+    { roman: 'XV',    nameEn: 'The Devil',          nameKr: '악마',           element: '',     planet: '',       zodiac: '염소자리',
+      keywordsUp: '속박, 욕망, 집착, 유혹',         keywordsRev: '해방, 깨달음, 회복',
+      description: '속박과 욕망. 자신을 가둔 것은 결국 자기 자신이다. 사슬은 헐겁고, 벗어나려면 그것이 사슬임을 먼저 알아야 한다.' },
+    { roman: 'XVI',   nameEn: 'The Tower',          nameKr: '탑',             element: '',     planet: '화성',   zodiac: '',
+      keywordsUp: '붕괴, 충격, 격변, 폭로',         keywordsRev: '회피, 지연, 점진적 변화',
+      description: '갑작스러운 붕괴와 폭로. 거짓 위에 세워진 것은 무너진다. 번개는 무자비하지만, 그 후의 폐허 위에서만 진짜를 다시 세울 수 있다.' },
+    { roman: 'XVII',  nameEn: 'The Star',           nameKr: '별',             element: '',     planet: '',       zodiac: '물병자리',
+      keywordsUp: '희망, 영감, 회복, 평온',         keywordsRev: '절망, 환멸, 신뢰상실',
+      description: '희망과 영감의 회복. 폭풍 뒤의 평온이 찾아온다. 깊은 밤에도 별은 사라지지 않고, 다만 보이지 않을 뿐이다.' },
+    { roman: 'XVIII', nameEn: 'The Moon',           nameKr: '달',             element: '',     planet: '',       zodiac: '물고기자리',
+      keywordsUp: '환상, 무의식, 두려움, 직관',     keywordsRev: '명료함, 진실, 두려움 극복',
+      description: '환상과 무의식의 카드. 보이는 것이 전부가 아니다. 달빛 아래에서는 모든 것이 자신의 그림자를 함께 데리고 있다.' },
+    { roman: 'XIX',   nameEn: 'The Sun',            nameKr: '태양',           element: '',     planet: '태양',   zodiac: '',
+      keywordsUp: '기쁨, 성공, 활력, 명료함',       keywordsRev: '일시적 좌절, 자만, 불안',
+      description: '기쁨과 명료함. 진실이 빛 아래 드러난다. 숨길 것이 없을 때 비로소 자유롭다.' },
+    { roman: 'XX',    nameEn: 'Judgement',          nameKr: '심판',           element: '불',   planet: '명왕성', zodiac: '',
+      keywordsUp: '부활, 각성, 결정, 사명',         keywordsRev: '자기비판, 거부, 미해결',
+      description: '부활과 각성. 과거를 정리하고 새로운 사명으로 나아간다. 부르는 소리는 외부에서 들리지만, 응답하는 것은 안에서 깨어난 자기 자신이다.' },
+    { roman: 'XXI',   nameEn: 'The World',          nameKr: '세계',           element: '',     planet: '토성',   zodiac: '',
+      keywordsUp: '완성, 성취, 통합, 여정',         keywordsRev: '미완, 정체, 종결지연',
+      description: '완성과 통합. 여정의 끝에서 새로운 시작이 열린다. 원은 닫히지 않고 다시 시작점으로 돌아온다 — 더 깊어진 채로.' }
+];
+
+/* ============================================================
+   상태 변수
+============================================================ */
+let slots = [];
+let activeSlotIdx = 0;
+let currentColors = { c1: '#8889CD', c2: '#DDAACC' };
+let cardThemeDark = false;
+let pageTheme = 'dark';
+
+/* ============================================================
+   기본 카드 데이터 생성
+============================================================ */
+function defaultCardData(presetIdx = 0) {
+    const p = MAJOR_ARCANA[presetIdx];
+    return {
+        mode: 'classic',
+        preset: presetIdx,
+        roman: p.roman,
+        nameEn: p.nameEn,
+        nameKr: p.nameKr,
+        keywordsUp: p.keywordsUp,
+        keywordsRev: p.keywordsRev,
+        description: p.description || '',
+        element: p.element,
+        planet: p.planet,
+        zodiac: p.zodiac,
+        reversed: false,
+        flipped: false,    // 카드 뒤집힘 (앞=false, 뒤=true)
+        image: '',
+        imageOrigin: '',
+        imgZoom: 100,
+        imgX: 50,
+        imgY: 50
+    };
+}
+
+function newSlot(presetIdx = 0) {
+    return {
+        data: defaultCardData(presetIdx),
+        colors: { c1: currentColors.c1, c2: currentColors.c2 },
+        themeDark: cardThemeDark
+    };
+}
+
+function getActiveSlot() {
+    return slots[activeSlotIdx];
+}
+
+/* ============================================================
+   초기화
+============================================================ */
+function init() {
+    // 프리셋 드롭다운 채우기
+    const sel = document.getElementById('presetSelect');
+    MAJOR_ARCANA.forEach((c, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = `${c.roman}. ${c.nameEn} (${c.nameKr})`;
+        sel.appendChild(opt);
+    });
+
+    slots = [newSlot(0)];
+    activeSlotIdx = 0;
+    renderSlotPanel();
+    renderForm();
+    renderCard();
+    setupResizer();
+    setupGlobalListeners();
+    setupCropEvents();
+    applyZoom();
+}
+
+/* ============================================================
+   슬롯 패널
+============================================================ */
+function renderSlotPanel() {
+    const panel = document.getElementById('slotPanel');
+    panel.innerHTML = '';
+    slots.forEach((slot, idx) => {
+        const d = slot.data;
+        const label = `${d.roman}. ${d.nameKr || d.nameEn || '카드'}${d.reversed ? ' ↻' : ''}`;
+        const item = document.createElement('div');
+        item.className = 'slot-item' + (idx === activeSlotIdx ? ' active' : '');
+        item.innerHTML = `
+            <div class="slot-num">${idx + 1}</div>
+            <div class="slot-name" title="${escapeAttr(label)}">${escapeHtml(label)}</div>
+            <div class="slot-actions">
+                <button title="복제" onclick="event.stopPropagation();duplicateSlot(${idx})">
+                    <span class="material-icons-outlined">content_copy</span>
+                </button>
+                <button title="삭제" onclick="event.stopPropagation();removeSlot(${idx})">
+                    <span class="material-icons-outlined">close</span>
+                </button>
+            </div>
+        `;
+        item.onclick = () => switchSlot(idx);
+        panel.appendChild(item);
+    });
+}
+
+function switchSlot(idx) {
+    if (idx < 0 || idx >= slots.length) return;
+    activeSlotIdx = idx;
+    const slot = slots[idx];
+    currentColors = { c1: slot.colors.c1, c2: slot.colors.c2 };
+    cardThemeDark = slot.themeDark;
+    document.getElementById('colorC1').value = currentColors.c1;
+    document.getElementById('colorC2').value = currentColors.c2;
+    renderSlotPanel();
+    renderForm();
+    renderCard();
+    requestAnimationFrame(() => applyZoom());
+}
+
+function addSlot() {
+    slots.push(newSlot(0));
+    activeSlotIdx = slots.length - 1;
+    renderSlotPanel();
+    renderForm();
+    renderCard();
+}
+
+function duplicateCurrentSlot() {
+    duplicateSlot(activeSlotIdx);
+}
+
+function duplicateSlot(idx) {
+    const orig = slots[idx];
+    const copy = JSON.parse(JSON.stringify(orig));
+    slots.splice(idx + 1, 0, copy);
+    activeSlotIdx = idx + 1;
+    renderSlotPanel();
+    renderForm();
+    renderCard();
+}
+
+function removeSlot(idx) {
+    if (slots.length <= 1) {
+        alert('마지막 카드는 삭제할 수 없어');
+        return;
+    }
+    slots.splice(idx, 1);
+    if (activeSlotIdx >= slots.length) activeSlotIdx = slots.length - 1;
+    const slot = getActiveSlot();
+    currentColors = { c1: slot.colors.c1, c2: slot.colors.c2 };
+    cardThemeDark = slot.themeDark;
+    document.getElementById('colorC1').value = currentColors.c1;
+    document.getElementById('colorC2').value = currentColors.c2;
+    renderSlotPanel();
+    renderForm();
+    renderCard();
+}
+
+/* ============================================================
+   폼 렌더링 (현재 슬롯 데이터를 인풋에 동기화)
+============================================================ */
+function renderForm() {
+    const d = getActiveSlot().data;
+    // preset select
+    const sel = document.getElementById('presetSelect');
+    sel.value = (d.preset != null) ? d.preset : '';
+    // 인풋 필드
+    document.querySelectorAll('[data-field]').forEach(el => {
+        const f = el.dataset.field;
+        if (d[f] != null) el.value = d[f];
+    });
+    // 역방향 토글
+    const toggle = document.getElementById('reversedToggle');
+    if (d.reversed) toggle.classList.add('active');
+    else toggle.classList.remove('active');
+    // 플립 버튼
+    syncFlipButton();
+    // 이미지 썸네일 + 슬라이더 동기화
+    syncImgThumb();
+    syncImgAdjustInputs();
+}
+
+function onFormInput() {
+    const d = getActiveSlot().data;
+    document.querySelectorAll('[data-field]').forEach(el => {
+        const f = el.dataset.field;
+        d[f] = el.value;
+    });
+    renderSlotPanel();
+    renderCard();
+}
+
+/* ============================================================
+   프리셋 적용
+============================================================ */
+function applyPreset() {
+    const sel = document.getElementById('presetSelect');
+    const v = sel.value;
+    if (v === '') return;
+    const idx = parseInt(v);
+    const p = MAJOR_ARCANA[idx];
+    const slot = getActiveSlot();
+    // 이미지/줌/X/Y/역방향/플립은 유지, 텍스트만 교체
+    slot.data.preset = idx;
+    slot.data.roman = p.roman;
+    slot.data.nameEn = p.nameEn;
+    slot.data.nameKr = p.nameKr;
+    slot.data.keywordsUp = p.keywordsUp;
+    slot.data.keywordsRev = p.keywordsRev;
+    slot.data.description = p.description || '';
+    slot.data.element = p.element;
+    slot.data.planet = p.planet;
+    slot.data.zodiac = p.zodiac;
+    renderForm();
+    renderSlotPanel();
+    renderCard();
+}
+
+/* ============================================================
+   역방향 토글
+============================================================ */
+function toggleReversed() {
+    const d = getActiveSlot().data;
+    d.reversed = !d.reversed;
+    renderForm();
+    renderSlotPanel();
+    renderCard();
+}
+
+/* ============================================================
+   이미지 처리
+============================================================ */
+function onImageUpload(ev) {
+    const file = ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        openCropModal(e.target.result);
+    };
+    reader.readAsDataURL(file);
+    ev.target.value = '';
+}
+
+function clearImage() {
+    const d = getActiveSlot().data;
+    d.image = '';
+    d.imageOrigin = '';
+    d.imgZoom = 100; d.imgX = 50; d.imgY = 50;
+    syncImgThumb();
+    syncImgAdjustInputs();
+    renderCard();
+}
+
+function recropImage() {
+    const d = getActiveSlot().data;
+    if (!d.imageOrigin) {
+        alert('원본 이미지가 없어. 다시 업로드해줘.');
+        return;
+    }
+    openCropModal(d.imageOrigin);
+}
+
+function syncImgAdjustInputs() {
+    const d = getActiveSlot().data;
+    document.getElementById('imgZoomRange').value = d.imgZoom;
+    document.getElementById('imgZoomVal').textContent = d.imgZoom + '%';
+    document.getElementById('imgXRange').value = d.imgX;
+    document.getElementById('imgXVal').textContent = d.imgX + '%';
+    document.getElementById('imgYRange').value = d.imgY;
+    document.getElementById('imgYVal').textContent = d.imgY + '%';
+}
+
+function syncImgThumb() {
+    const thumb = document.getElementById('imgThumb');
+    const img = getActiveSlot().data.image;
+    if (img) {
+        thumb.innerHTML = `<img src="${img}" alt="">`;
+    } else {
+        thumb.innerHTML = `<span class="material-icons-outlined">image_not_supported</span>`;
+    }
+}
+
+function onImgAdjust() {
+    const d = getActiveSlot().data;
+    d.imgZoom = parseInt(document.getElementById('imgZoomRange').value);
+    d.imgX = parseInt(document.getElementById('imgXRange').value);
+    d.imgY = parseInt(document.getElementById('imgYRange').value);
+    document.getElementById('imgZoomVal').textContent = d.imgZoom + '%';
+    document.getElementById('imgXVal').textContent = d.imgX + '%';
+    document.getElementById('imgYVal').textContent = d.imgY + '%';
+    renderCard();
+}
+
+/* ============================================================
+   크롭 모달 시스템 (PROFILE_GENv3에서 회수 + 타로용 조정)
+============================================================ */
+let cropState = {
+    natW: 0, natH: 0,
+    box: { x: 0.1, y: 0.1, w: 0.8, h: 0.8 },  // 0~1 비율 좌표
+    ratio: 4/5,         // 비율 잠금 (null=자유) — 타로 기본 4:5
+    dragMode: null,
+    startX: 0, startY: 0,
+    startBox: null
+};
+
+function openCropModal(dataUrl) {
+    const modal = document.getElementById('cropModal');
+    const img = document.getElementById('cropImg');
+    // 원본을 슬롯에도 저장 (다시 크롭용)
+    getActiveSlot().data.imageOrigin = dataUrl;
+    img.onload = () => {
+        cropState.natW = img.naturalWidth;
+        cropState.natH = img.naturalHeight;
+        // 타로는 기본 4:5 (또는 사용자가 선택한 값 유지)
+        const sel = document.getElementById('cropRatio');
+        const v = sel.value;
+        if (v === 'free') cropState.ratio = null;
+        else {
+            const [w, h] = v.split(':').map(Number);
+            cropState.ratio = w / h;
+        }
+        resetCropBox();
+    };
+    img.src = dataUrl;
+    modal.classList.remove('hidden');
+}
+
+function closeCropModal() {
+    document.getElementById('cropModal').classList.add('hidden');
+}
+
+function onCropRatioChange() {
+    const v = document.getElementById('cropRatio').value;
+    if (v === 'free') cropState.ratio = null;
+    else {
+        const [w, h] = v.split(':').map(Number);
+        cropState.ratio = w / h;
+    }
+    resetCropBox();
+}
+
+function resetCropBox() {
+    const img = document.getElementById('cropImg');
+    const imgW = img.clientWidth || cropState.natW;
+    const imgH = img.clientHeight || cropState.natH;
+    if (cropState.ratio == null) {
+        cropState.box = { x: 0.1, y: 0.1, w: 0.8, h: 0.8 };
+    } else {
+        // 이미지에 맞춰 비율 적용 (가능한 큰 박스, 중앙)
+        const targetRatio = cropState.ratio;
+        const imgRatio = imgW / imgH;
+        let bw, bh;
+        if (imgRatio > targetRatio) {
+            bh = 0.9; bw = (bh * imgH * targetRatio) / imgW;
+        } else {
+            bw = 0.9; bh = (bw * imgW / targetRatio) / imgH;
+        }
+        cropState.box = { x: (1-bw)/2, y: (1-bh)/2, w: bw, h: bh };
+    }
+    renderCropBox();
+}
+
+function renderCropBox() {
+    const img = document.getElementById('cropImg');
+    const box = document.getElementById('cropBox');
+    const wrap = document.getElementById('cropImgWrap');
+    if (!img.clientWidth) return;
+    const W = img.clientWidth, H = img.clientHeight;
+    wrap.style.width = W + 'px';
+    wrap.style.height = H + 'px';
+    box.style.left = (cropState.box.x * W) + 'px';
+    box.style.top = (cropState.box.y * H) + 'px';
+    box.style.width = (cropState.box.w * W) + 'px';
+    box.style.height = (cropState.box.h * H) + 'px';
+}
+
+function setupCropEvents() {
+    const box = document.getElementById('cropBox');
+
+    const onStart = (clientX, clientY, target) => {
+        const handle = target.closest && target.closest('.crop-handle');
+        cropState.dragMode = handle ? handle.dataset.h : 'move';
+        cropState.startX = clientX;
+        cropState.startY = clientY;
+        cropState.startBox = { ...cropState.box };
+    };
+
+    const onMove = (clientX, clientY) => {
+        if (!cropState.dragMode) return;
+        const img = document.getElementById('cropImg');
+        const W = img.clientWidth, H = img.clientHeight;
+        const dx = (clientX - cropState.startX) / W;
+        const dy = (clientY - cropState.startY) / H;
+        let b = { ...cropState.startBox };
+        const m = cropState.dragMode;
+
+        if (m === 'move') {
+            b.x = Math.max(0, Math.min(1 - b.w, b.x + dx));
+            b.y = Math.max(0, Math.min(1 - b.h, b.y + dy));
+        } else {
+            let nx = b.x, ny = b.y, nw = b.w, nh = b.h;
+            if (m.includes('w')) { nx = b.x + dx; nw = b.w - dx; }
+            if (m.includes('e')) { nw = b.w + dx; }
+            if (m.includes('n')) { ny = b.y + dy; nh = b.h - dy; }
+            if (m.includes('s')) { nh = b.h + dy; }
+
+            // 비율 잠금
+            if (cropState.ratio != null) {
+                const imgRatio = W / H;
+                const desiredRatio = cropState.ratio / imgRatio;
+                if (m === 'n' || m === 's') {
+                    nw = nh * desiredRatio;
+                    nx = b.x + (b.w - nw) / 2;
+                } else if (m === 'e' || m === 'w') {
+                    nh = nw / desiredRatio;
+                    ny = b.y + (b.h - nh) / 2;
+                } else {
+                    if (Math.abs(dx) > Math.abs(dy)) {
+                        const newH = nw / desiredRatio;
+                        if (m.includes('n')) ny = b.y + b.h - newH;
+                        nh = newH;
+                    } else {
+                        const newW = nh * desiredRatio;
+                        if (m.includes('w')) nx = b.x + b.w - newW;
+                        nw = newW;
+                    }
+                }
+            }
+            if (nw < 0.05) nw = 0.05;
+            if (nh < 0.05) nh = 0.05;
+            if (nx < 0) { nw += nx; nx = 0; }
+            if (ny < 0) { nh += ny; ny = 0; }
+            if (nx + nw > 1) nw = 1 - nx;
+            if (ny + nh > 1) nh = 1 - ny;
+            b = { x: nx, y: ny, w: nw, h: nh };
+        }
+        cropState.box = b;
+        renderCropBox();
+    };
+
+    const onEnd = () => { cropState.dragMode = null; };
+
+    // 마우스
+    box.addEventListener('mousedown', e => {
+        e.preventDefault();
+        onStart(e.clientX, e.clientY, e.target);
+    });
+    document.addEventListener('mousemove', e => {
+        if (cropState.dragMode) onMove(e.clientX, e.clientY);
+    });
+    document.addEventListener('mouseup', onEnd);
+
+    // 터치
+    box.addEventListener('touchstart', e => {
+        e.preventDefault();
+        const t = e.touches[0];
+        onStart(t.clientX, t.clientY, e.target);
+    }, { passive: false });
+    document.addEventListener('touchmove', e => {
+        if (cropState.dragMode) {
+            e.preventDefault();
+            const t = e.touches[0];
+            onMove(t.clientX, t.clientY);
+        }
+    }, { passive: false });
+    document.addEventListener('touchend', onEnd);
+    document.addEventListener('touchcancel', onEnd);
+
+    // 윈도우 리사이즈 시 크롭 박스 재배치
+    window.addEventListener('resize', () => {
+        if (!document.getElementById('cropModal').classList.contains('hidden')) {
+            renderCropBox();
+        }
+    });
+}
+
+function applyCrop() {
+    const dataUrl = getActiveSlot().data.imageOrigin;
+    if (!dataUrl) { closeCropModal(); return; }
+    const img = new Image();
+    img.onload = () => {
+        const W = img.naturalWidth, H = img.naturalHeight;
+        const sx = cropState.box.x * W;
+        const sy = cropState.box.y * H;
+        const sw = cropState.box.w * W;
+        const sh = cropState.box.h * H;
+        const canvas = document.createElement('canvas');
+        // 최대 출력 1200px 한도 (메모리 보호)
+        const maxDim = 1200;
+        const ratio = sw / sh;
+        let outW, outH;
+        if (sw > sh) {
+            outW = Math.min(sw, maxDim); outH = outW / ratio;
+        } else {
+            outH = Math.min(sh, maxDim); outW = outH * ratio;
+        }
+        canvas.width = outW; canvas.height = outH;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outW, outH);
+        const cropped = canvas.toDataURL('image/png');
+        const slot = getActiveSlot();
+        slot.data.image = cropped;
+        // 미세조정 리셋
+        slot.data.imgZoom = 100; slot.data.imgX = 50; slot.data.imgY = 50;
+        syncImgThumb();
+        syncImgAdjustInputs();
+        closeCropModal();
+        renderCard();
+        renderSlotPanel();
+    };
+    img.src = dataUrl;
+}
+
+/* ============================================================
+   테마 / 색상
+============================================================ */
+function setCardTheme(dark) {
+    cardThemeDark = dark;
+    getActiveSlot().themeDark = dark;
+    renderCard();
+}
+
+function onColorChange() {
+    currentColors.c1 = document.getElementById('colorC1').value;
+    currentColors.c2 = document.getElementById('colorC2').value;
+    getActiveSlot().colors = { c1: currentColors.c1, c2: currentColors.c2 };
+    renderCard();
+}
+
+function setColorPreset(c1, c2) {
+    currentColors.c1 = c1;
+    currentColors.c2 = c2;
+    document.getElementById('colorC1').value = c1;
+    document.getElementById('colorC2').value = c2;
+    getActiveSlot().colors = { c1, c2 };
+    renderCard();
+}
+
+function setPageTheme(theme) {
+    pageTheme = theme;
+    if (theme === 'light') {
+        document.body.style.background = '#f5f5f7';
+    } else {
+        document.body.style.background = '';
+    }
+}
+
+/* ============================================================
+   카드 렌더링 - classic 모드
+============================================================ */
+function renderCard() {
+    const captureArea = document.getElementById('captureArea');
+    const slot = getActiveSlot();
+    const d = slot.data;
+    const colors = slot.colors || currentColors;
+
+    captureArea.className = slot.themeDark ? 'card-theme-dark' : '';
+    captureArea.style.setProperty('--card-accent', colors.c1);
+    captureArea.style.setProperty('--card-accent-2', colors.c2);
+
+    const flippedClass = d.flipped ? ' flipped' : '';
+    captureArea.innerHTML = `
+        <div class="tarot-card-container${flippedClass}" id="cardContainer" onclick="flipCard()" title="클릭/탭으로 뒤집기">
+            <div class="tarot-card-flipper">
+                <div class="tarot-card-face front">${renderClassic(d)}</div>
+                <div class="tarot-card-face back">${renderClassicBack(d)}</div>
+            </div>
+        </div>
+    `;
+
+    if (document.getElementById('inpZoom')) {
+        requestAnimationFrame(() => applyZoom());
+    }
+}
+
+function renderClassic(d) {
+    const reversed = d.reversed;
+    const keywords = reversed ? d.keywordsRev : d.keywordsUp;
+    const astroParts = [];
+    if (d.element)  astroParts.push(`<span><span class="sym">◈</span>${escapeHtml(d.element)}</span>`);
+    if (d.planet)   astroParts.push(`<span><span class="sym">☉</span>${escapeHtml(d.planet)}</span>`);
+    if (d.zodiac)   astroParts.push(`<span><span class="sym">✦</span>${escapeHtml(d.zodiac)}</span>`);
+    const astroHtml = astroParts.length
+        ? `<div class="tc-astro">${astroParts.join('')}</div>`
+        : `<div class="tc-astro tc-astro-empty"></div>`;
+
+    const imageHtml = d.image
+        ? `<img class="tc-img-inner" src="${d.image}" alt=""
+              style="object-position:${d.imgX}% ${d.imgY}%; transform:scale(${d.imgZoom/100}); transform-origin:${d.imgX}% ${d.imgY}%;">`
+        : `<div class="tc-image-placeholder">이미지 영역<br>드래그·붙여넣기·업로드 모두 가능</div>`;
+
+    return `
+    <div class="tarot-card card-classic${reversed ? ' reversed' : ''}">
+        <div class="tc-frame"></div>
+        <div class="tc-frame-inner"></div>
+        <div class="tc-corner tl"></div>
+        <div class="tc-corner tr"></div>
+        <div class="tc-corner bl"></div>
+        <div class="tc-corner br"></div>
+        ${reversed ? '<div class="tc-reverse-mark">R</div>' : ''}
+        <div class="tc-inner">
+            <div class="tc-roman">${escapeHtml(d.roman || '')}</div>
+            <div class="tc-image" data-drop-target="1">${imageHtml}</div>
+            <div class="tc-banner">
+                <div class="tc-name-en">${escapeHtml(d.nameEn || '')}</div>
+                <div class="tc-name-kr">${escapeHtml(d.nameKr || '')}</div>
+            </div>
+            <div class="tc-keywords">
+                <div class="tc-keywords-label">${reversed ? 'Reversed' : 'Upright'}</div>
+                <div class="tc-keywords-text">${escapeHtml(keywords || '')}</div>
+            </div>
+            ${astroHtml}
+        </div>
+    </div>`;
+}
+
+function renderClassicBack(d) {
+    const reversed = d.reversed;
+    const astroParts = [];
+    if (d.element)  astroParts.push(`<span><span class="sym">◈</span>${escapeHtml(d.element)}</span>`);
+    if (d.planet)   astroParts.push(`<span><span class="sym">☉</span>${escapeHtml(d.planet)}</span>`);
+    if (d.zodiac)   astroParts.push(`<span><span class="sym">✦</span>${escapeHtml(d.zodiac)}</span>`);
+    const astroHtml = astroParts.length
+        ? `<div class="tcb-astro">${astroParts.join('')}</div>`
+        : `<div class="tcb-astro"></div>`;
+
+    const descHtml = d.description
+        ? `<div class="tcb-desc-text">${escapeHtml(d.description)}</div>`
+        : `<div class="tcb-desc-empty">해석문이 비어 있어<br>좌측 패널에서 입력해줘</div>`;
+
+    return `
+    <div class="tarot-card card-classic-back${reversed ? ' reversed' : ''}">
+        <div class="tc-frame"></div>
+        <div class="tc-frame-inner"></div>
+        <div class="tc-corner tl"></div>
+        <div class="tc-corner tr"></div>
+        <div class="tc-corner bl"></div>
+        <div class="tc-corner br"></div>
+        ${reversed ? '<div class="tc-reverse-mark">R</div>' : ''}
+        <div class="tcb-inner">
+            <div class="tcb-roman">${escapeHtml(d.roman || '')}</div>
+            <div class="tcb-name">
+                <div class="tcb-name-en">${escapeHtml(d.nameEn || '')}</div>
+                <div class="tcb-name-kr">${escapeHtml(d.nameKr || '')}</div>
+            </div>
+            <div class="tcb-description">
+                <div class="tcb-desc-label">— Meaning —</div>
+                ${descHtml}
+            </div>
+            ${astroHtml}
+        </div>
+    </div>`;
+}
+
+function flipCard() {
+    const d = getActiveSlot().data;
+    d.flipped = !d.flipped;
+    const c = document.getElementById('cardContainer');
+    if (c) c.classList.toggle('flipped', d.flipped);
+    syncFlipButton();
+}
+
+function syncFlipButton() {
+    const d = getActiveSlot().data;
+    const btn = document.getElementById('flipBtn');
+    if (btn) {
+        btn.innerHTML = d.flipped
+            ? '<span class="material-icons-outlined">flip_to_front</span> 앞면으로'
+            : '<span class="material-icons-outlined">flip_to_back</span> 뒷면 보기';
+    }
+}
+
+/* ============================================================
+   줌 시스템
+============================================================ */
+function applyZoom() {
+    const zEl = document.getElementById('inpZoom');
+    if (!zEl) return;
+    const z = parseInt(zEl.value);
+    document.getElementById('numZoom').value = z;
+    document.getElementById('miniZoom').textContent = z + '%';
+    const captureArea = document.getElementById('captureArea');
+    captureArea.style.transform = `scale(${z/100})`;
+    const inner = captureArea.querySelector('.tarot-card-container');
+    const previewInner = document.querySelector('.preview-inner');
+    if (inner && previewInner) {
+        const w = inner.offsetWidth;
+        const h = inner.offsetHeight;
+        captureArea.style.width = w + 'px';
+        captureArea.style.height = h + 'px';
+        previewInner.style.width = (w * z / 100) + 'px';
+        previewInner.style.height = (h * z / 100) + 'px';
+    }
+}
+
+function syncZoom() {
+    const v = parseInt(document.getElementById('numZoom').value);
+    document.getElementById('inpZoom').value = v;
+    applyZoom();
+}
+
+function setZoom(z) {
+    document.getElementById('inpZoom').value = z;
+    applyZoom();
+}
+
+function fitZoom() {
+    const wrapper = document.getElementById('previewWrapper');
+    const inner = document.querySelector('#captureArea .tarot-card-container');
+    if (!inner) return;
+    const ww = wrapper.clientWidth - 60;
+    const wh = wrapper.clientHeight - 60;
+    const zw = (ww / inner.offsetWidth) * 100;
+    const zh = (wh / inner.offsetHeight) * 100;
+    const z = Math.max(20, Math.min(200, Math.floor(Math.min(zw, zh))));
+    setZoom(z);
+}
+
+function toggleToolbar() {
+    document.getElementById('topToolbar').classList.toggle('collapsed');
+}
+
+/* ============================================================
+   모바일 풀스크린 토글 (split → preview → controls → split)
+============================================================ */
+let fsMode = 'split';
+function toggleFsMode() {
+    const body = document.body;
+    body.classList.remove('fs-preview', 'fs-controls');
+    if (fsMode === 'split') {
+        fsMode = 'preview';
+        body.classList.add('fs-preview');
+        setFsLabel('fullscreen_exit', '컨트롤');
+    } else if (fsMode === 'preview') {
+        fsMode = 'controls';
+        body.classList.add('fs-controls');
+        setFsLabel('view_module', '미리보기');
+    } else {
+        fsMode = 'split';
+        setFsLabel('fullscreen', '50:50');
+    }
+    setTimeout(() => applyZoom(), 100);
+}
+
+function setFsLabel(icon, label) {
+    const i = document.getElementById('mobFsIcon');
+    const l = document.getElementById('mobFsLabel');
+    if (i) i.textContent = icon;
+    if (l) l.textContent = label;
+}
+
+/* ============================================================
+   다운로드 (앞면 / 뒷면 / 양면)
+============================================================ */
+async function _captureOneFace(slot, face /* 'front'|'back' */) {
+    const captureArea = document.getElementById('captureArea');
+    const container = captureArea.querySelector('.tarot-card-container');
+    if (!container) throw new Error('카드 컨테이너를 찾을 수 없어');
+    // 캡처용 강제 회전 클래스
+    container.classList.remove('capture-front', 'capture-back');
+    container.classList.add(face === 'back' ? 'capture-back' : 'capture-front');
+    // 스타일 적용 대기
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    const blob = await htmlToImage.toBlob(captureArea, {
+        pixelRatio: 2,
+        backgroundColor: slot.themeDark ? '#1a1518' : '#f5efe2',
+        cacheBust: true
+    });
+    container.classList.remove('capture-front', 'capture-back');
+    return blob;
+}
+
+async function _downloadOneSide(face) {
+    const slot = getActiveSlot();
+    const d = slot.data;
+    const suffix = face === 'back' ? '_BACK' : (face === 'front' ? '' : '_FRONT');
+    const filename = `${d.roman || 'X'}_${d.nameEn || 'card'}${d.reversed ? '_R' : ''}${suffix}.png`
+        .replace(/[^a-zA-Z0-9_가-힣\-\.]/g, '_');
+
+    const captureArea = document.getElementById('captureArea');
+    const prevTransform = captureArea.style.transform;
+    captureArea.style.transform = 'scale(1)';
+
+    try {
+        const blob = await _captureOneFace(slot, face);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        alert('다운로드 실패: ' + err.message);
+        console.error(err);
+    } finally {
+        captureArea.style.transform = prevTransform;
+    }
+}
+
+async function downloadFront() { await _downloadOneSide('front'); }
+async function downloadBack()  { await _downloadOneSide('back'); }
+
+async function downloadBoth() {
+    const slot = getActiveSlot();
+    const d = slot.data;
+    const base = `${d.roman || 'X'}_${d.nameEn || 'card'}${d.reversed ? '_R' : ''}`
+        .replace(/[^a-zA-Z0-9_가-힣\-\.]/g, '_');
+
+    const captureArea = document.getElementById('captureArea');
+    const prevTransform = captureArea.style.transform;
+    captureArea.style.transform = 'scale(1)';
+
+    try {
+        const zip = new JSZip();
+        const frontBlob = await _captureOneFace(slot, 'front');
+        zip.file(`${base}_FRONT.png`, frontBlob);
+        const backBlob = await _captureOneFace(slot, 'back');
+        zip.file(`${base}_BACK.png`, backBlob);
+        const content = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url; a.download = `${base}_BOTH.zip`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        alert('양면 저장 실패: ' + err.message);
+        console.error(err);
+    } finally {
+        captureArea.style.transform = prevTransform;
+    }
+}
+
+// 하위 호환 (mob-bar의 기존 onclick이 downloadCard 사용)
+async function downloadCard() {
+    const d = getActiveSlot().data;
+    await _downloadOneSide(d.flipped ? 'back' : 'front');
+}
+
+async function downloadAllZip() {
+    if (slots.length === 0) return;
+    const zip = new JSZip();
+    const captureArea = document.getElementById('captureArea');
+    const origIdx = activeSlotIdx;
+    const prevTransform = captureArea.style.transform;
+
+    try {
+        for (let i = 0; i < slots.length; i++) {
+            activeSlotIdx = i;
+            const slot = slots[i];
+            currentColors = { c1: slot.colors.c1, c2: slot.colors.c2 };
+            cardThemeDark = slot.themeDark;
+            renderCard();
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+            captureArea.style.transform = 'scale(1)';
+            await new Promise(r => setTimeout(r, 50));
+
+            const d = slot.data;
+            const base = `${String(i+1).padStart(2,'0')}_${d.roman || 'X'}_${d.nameEn || 'card'}${d.reversed ? '_R' : ''}`
+                .replace(/[^a-zA-Z0-9_가-힣\-\.]/g, '_');
+            const frontBlob = await _captureOneFace(slot, 'front');
+            zip.file(`${base}_FRONT.png`, frontBlob);
+            const backBlob = await _captureOneFace(slot, 'back');
+            zip.file(`${base}_BACK.png`, backBlob);
+        }
+        const content = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `tarot_cards_${Date.now()}.zip`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        alert('ZIP 생성 실패: ' + err.message);
+        console.error(err);
+    } finally {
+        activeSlotIdx = origIdx;
+        const slot = getActiveSlot();
+        currentColors = { c1: slot.colors.c1, c2: slot.colors.c2 };
+        cardThemeDark = slot.themeDark;
+        renderCard();
+        captureArea.style.transform = prevTransform;
+    }
+}
+
+/* ============================================================
+   리사이저
+============================================================ */
+function setupResizer() {
+    const resizer = document.getElementById('resizer');
+    const wrap = document.getElementById('controlsWrapper');
+    let dragging = false;
+    let startX, startW;
+    const onDown = (e) => {
+        dragging = true;
+        startX = e.clientX || e.touches[0].clientX;
+        startW = wrap.offsetWidth;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+    };
+    const onMove = (e) => {
+        if (!dragging) return;
+        const x = e.clientX || (e.touches && e.touches[0].clientX);
+        const dx = x - startX;
+        const newW = Math.max(340, Math.min(800, startW + dx));
+        wrap.style.width = newW + 'px';
+    };
+    const onUp = () => {
+        dragging = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        requestAnimationFrame(() => applyZoom());
+    };
+    resizer.addEventListener('mousedown', onDown);
+    resizer.addEventListener('touchstart', onDown, { passive: false });
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchend', onUp);
+}
+
+function setupGlobalListeners() {
+    window.addEventListener('resize', () => {
+        requestAnimationFrame(() => applyZoom());
+    });
+
+    // 공용 파일 로더 → 크롭 모달 열기
+    const loadImageFile = (file) => {
+        if (!file || !file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            openCropModal(e.target.result);
+        };
+        reader.readAsDataURL(file);
+    };
+    // 외부에서도 접근 가능하게 (mob-bar 등에서)
+    window._loadImageFile = loadImageFile;
+
+    // 이미지 썸네일을 드롭존으로
+    const thumb = document.getElementById('imgThumb');
+    ['dragover','dragenter'].forEach(ev => {
+        thumb.addEventListener(ev, e => { e.preventDefault(); thumb.classList.add('drop-over'); });
+    });
+    ['dragleave','dragend'].forEach(ev => {
+        thumb.addEventListener(ev, e => { e.preventDefault(); thumb.classList.remove('drop-over'); });
+    });
+    thumb.addEventListener('drop', e => {
+        e.preventDefault();
+        thumb.classList.remove('drop-over');
+        const file = e.dataTransfer.files && e.dataTransfer.files[0];
+        loadImageFile(file);
+    });
+    // 썸네일 클릭으로도 업로드
+    thumb.addEventListener('click', () => {
+        document.getElementById('imgFileInput').click();
+    });
+
+    // 미리보기 전체 영역 드롭 (카드 위에 그냥 떨궈도 됨)
+    const previewWrapper = document.getElementById('previewWrapper');
+    previewWrapper.addEventListener('dragover', e => {
+        e.preventDefault();
+        previewWrapper.classList.add('drop-over');
+    });
+    previewWrapper.addEventListener('dragleave', e => {
+        if (e.target === previewWrapper) previewWrapper.classList.remove('drop-over');
+    });
+    previewWrapper.addEventListener('drop', e => {
+        e.preventDefault();
+        previewWrapper.classList.remove('drop-over');
+        const file = e.dataTransfer.files && e.dataTransfer.files[0];
+        loadImageFile(file);
+    });
+
+    // 전역 Ctrl+V 페이스트
+    document.addEventListener('paste', (e) => {
+        // 텍스트 입력 중인 경우는 제외
+        const tag = (e.target.tagName || '').toLowerCase();
+        if (tag === 'input' || tag === 'textarea') return;
+        const items = e.clipboardData && e.clipboardData.items;
+        if (!items) return;
+        for (const item of items) {
+            if (item.type && item.type.startsWith('image/')) {
+                const file = item.getAsFile();
+                if (file) loadImageFile(file);
+                break;
+            }
+        }
+    });
+}
+
+/* ============================================================
+   유틸
+============================================================ */
+function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+function escapeAttr(s) {
+    return escapeHtml(s);
+}
+
+// 초기화
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
