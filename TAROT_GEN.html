@@ -12,11 +12,11 @@
 <style>
 /* ============================================================
    루트 변수 - 사용자 우선 팔레트
-   1차: #8889CD, #DDAACC, #CCAA88, #BB6688
+   1차: #8888CC, #DDAACC, #CCAA88, #BB6688
    2차: #884499, #EE1166, #FF6699, #00BBDD, #FF7722, #0077DD
 ============================================================ */
 :root {
-    --c1: #8889CD; --c2: #DDAACC; --c3: #CCAA88; --c4: #BB6688;
+    --c1: #8888CC; --c2: #DDAACC; --c3: #CCAA88; --c4: #BB6688;
     --c5: #884499; --c6: #EE1166; --c7: #FF6699; --c8: #00BBDD; --c9: #FF7722; --c10: #0077DD;
     --bg-page: #0d0d10;
     --bg-panel: #16161b;
@@ -25,14 +25,14 @@
     --border: #2d2d35;
     --text-main: #f0f0f5;
     --text-sub: #999;
-    --accent: #8889CD;
+    --accent: #8888CC;
 
     /* 카드 내부용 (테마에 따라 변동) */
     --card-bg: #f5efe2;
     --card-text: #2a1810;
     --card-sub: #6b4a30;
     --card-border: #c4a878;
-    --card-accent: #8889CD;
+    --card-accent: #8888CC;
     --card-accent-2: #DDAACC;
 }
 .card-theme-dark {
@@ -1189,12 +1189,12 @@ body.single-slot .slot-nav-btn { display: none; }
         </div>
         <div class="input-pair">
             <label>강조1</label>
-            <input type="color" id="colorC1" value="#8889CD" oninput="onColorChange()" style="height:32px;cursor:pointer;">
+            <input type="color" id="colorC1" value="#8888CC" oninput="onColorChange()" style="height:32px;cursor:pointer;">
             <label>강조2</label>
             <input type="color" id="colorC2" value="#DDAACC" oninput="onColorChange()" style="height:32px;cursor:pointer;">
         </div>
         <div class="input-row">
-            <button class="btn-icon" onclick="setColorPreset('#8889CD','#DDAACC')" style="background:linear-gradient(90deg,#8889CD,#DDAACC);color:white;flex:1;">기본</button>
+            <button class="btn-icon" onclick="setColorPreset('#8888CC','#DDAACC')" style="background:linear-gradient(90deg,#8888CC,#DDAACC);color:white;flex:1;">기본</button>
             <button class="btn-icon" onclick="setColorPreset('#CCAA88','#BB6688')" style="background:linear-gradient(90deg,#CCAA88,#BB6688);color:white;flex:1;">대지</button>
             <button class="btn-icon" onclick="setColorPreset('#884499','#EE1166')" style="background:linear-gradient(90deg,#884499,#EE1166);color:white;flex:1;">정열</button>
             <button class="btn-icon" onclick="setColorPreset('#0077DD','#00BBDD')" style="background:linear-gradient(90deg,#0077DD,#00BBDD);color:white;flex:1;">바다</button>
@@ -1677,7 +1677,7 @@ function getSuitLabel(suitKey) {
 ============================================================ */
 let slots = [];
 let activeSlotIdx = 0;
-let currentColors = { c1: '#8889CD', c2: '#DDAACC' };
+let currentColors = { c1: '#8888CC', c2: '#DDAACC' };
 let cardThemeDark = false;
 let pageTheme = 'dark';
 let backReadabilityFirst = false;  // 역방향 뒷면을 가독성 우선으로 (회전 안 함)
@@ -2122,7 +2122,7 @@ function removeSlot(idx) {
 function resetAllSlots() {
     if (!confirm('정말 전부 비울까? 모든 슬롯의 이미지/입력 다 사라져')) return;
     cardThemeDark = false;
-    currentColors = { c1: '#8889CD', c2: '#DDAACC' };
+    currentColors = { c1: '#8888CC', c2: '#DDAACC' };
     slots = [newSlot(0)];
     activeSlotIdx = 0;
     document.getElementById('colorC1').value = currentColors.c1;

@@ -12,11 +12,11 @@
 <style>
 /* ============================================================
    루트 변수 - 사용자 우선 팔레트
-   1차: #8889CD, #DDAACC, #CCAA88, #BB6688
+   1차: #8888CC, #DDAACC, #CCAA88, #BB6688
    2차: #884499, #EE1166, #FF6699, #00BBDD, #FF7722, #0077DD
 ============================================================ */
 :root {
-    --c1: #8889CD; --c2: #DDAACC; --c3: #CCAA88; --c4: #BB6688;
+    --c1: #8888CC; --c2: #DDAACC; --c3: #CCAA88; --c4: #BB6688;
     --c5: #884499; --c6: #EE1166; --c7: #FF6699; --c8: #00BBDD; --c9: #FF7722; --c10: #0077DD;
     --bg-page: #0d0d10;
     --bg-panel: #16161b;
@@ -25,14 +25,14 @@
     --border: #2d2d35;
     --text-main: #f0f0f5;
     --text-sub: #999;
-    --accent: #8889CD;
+    --accent: #8888CC;
 
     /* 카드 내부용 (테마에 따라 바뀜) */
     --card-bg: #ffffff;
     --card-text: #1a1a1a;
     --card-sub: #666;
     --card-border: #e0e0e0;
-    --card-accent: #8889CD;
+    --card-accent: #8888CC;
     --card-accent-2: #DDAACC;
 }
 .card-theme-dark {
@@ -2254,12 +2254,12 @@ label { font-size: 12px; color: var(--text-sub); font-weight: 600; }
         </div>
         <div class="ctrl-content">
             <div>
-                <div class="color-picker-label"><span class="dot" id="dot1" style="background:#8889CD"></span> 메인 액센트</div>
+                <div class="color-picker-label"><span class="dot" id="dot1" style="background:#8888CC"></span> 메인 액센트</div>
                 <div class="color-picker-row">
-                    <div class="swatch" style="background:#8889CD" id="swatch1">
-                        <input type="color" id="cp1" value="#8889CD" oninput="onColorChange(1, 'picker')">
+                    <div class="swatch" style="background:#8888CC" id="swatch1">
+                        <input type="color" id="cp1" value="#8888CC" oninput="onColorChange(1, 'picker')">
                     </div>
-                    <input type="text" class="hex-input" id="hex1" value="#8889CD" oninput="onColorChange(1, 'hex')">
+                    <input type="text" class="hex-input" id="hex1" value="#8888CC" oninput="onColorChange(1, 'hex')">
                     <div class="rgb-group">
                         <input type="number" id="r1" min="0" max="255" value="136" oninput="onColorChange(1, 'rgb')">
                         <input type="number" id="g1" min="0" max="255" value="137" oninput="onColorChange(1, 'rgb')">
@@ -2267,7 +2267,7 @@ label { font-size: 12px; color: var(--text-sub); font-weight: 600; }
                     </div>
                 </div>
                 <div class="palette-strip">
-                    <div class="palette-dot" style="background:#8889CD" onclick="setColor(1,'#8889CD')"></div>
+                    <div class="palette-dot" style="background:#8888CC" onclick="setColor(1,'#8888CC')"></div>
                     <div class="palette-dot" style="background:#DDAACC" onclick="setColor(1,'#DDAACC')"></div>
                     <div class="palette-dot" style="background:#CCAA88" onclick="setColor(1,'#CCAA88')"></div>
                     <div class="palette-dot" style="background:#BB6688" onclick="setColor(1,'#BB6688')"></div>
@@ -2293,7 +2293,7 @@ label { font-size: 12px; color: var(--text-sub); font-weight: 600; }
                     </div>
                 </div>
                 <div class="palette-strip">
-                    <div class="palette-dot" style="background:#8889CD" onclick="setColor(2,'#8889CD')"></div>
+                    <div class="palette-dot" style="background:#8888CC" onclick="setColor(2,'#8888CC')"></div>
                     <div class="palette-dot" style="background:#DDAACC" onclick="setColor(2,'#DDAACC')"></div>
                     <div class="palette-dot" style="background:#CCAA88" onclick="setColor(2,'#CCAA88')"></div>
                     <div class="palette-dot" style="background:#BB6688" onclick="setColor(2,'#BB6688')"></div>
@@ -2738,7 +2738,7 @@ let activeSlotIdx = 0;
 let currentMode = 'business';
 
 // 공유 색상 (카드 액센트)
-let currentColors = { c1: '#8889CD', c2: '#DDAACC' };
+let currentColors = { c1: '#8888CC', c2: '#DDAACC' };
 let cardThemeDark = false;
 let pageTheme = 'dark';
 
@@ -3991,7 +3991,7 @@ function setColor(num, hex) {
 }
 
 function resetColors() {
-    setColor(1, '#8889CD');
+    setColor(1, '#8888CC');
     setColor(2, '#DDAACC');
 }
 

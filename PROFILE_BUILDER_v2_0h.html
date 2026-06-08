@@ -46,7 +46,7 @@
 
 <style>
 :root {
-    --c1: #8889CD; --c2: #DDAACC; --c3: #CCAA88; --c4: #BB6688;
+    --c1: #8888CC; --c2: #DDAACC; --c3: #CCAA88; --c4: #BB6688;
     --c5: #884499; --c6: #EE1166; --c7: #FF6699; --c8: #00BBDD; --c9: #FF7722; --c10: #0077DD;
     --bg-page: #0d0d10;
     --bg-panel: #16161b;
@@ -55,7 +55,7 @@
     --border: #2d2d35;
     --text-main: #f0f0f5;
     --text-sub: #999;
-    --accent: #8889CD;
+    --accent: #8888CC;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; }
@@ -1773,7 +1773,7 @@ function newSlot(w = 460, h = 640) {
             width: w, height: h,
             bg: '#ffffff',
             bgType: 'solid',
-            bgGradC1: '#8889CD',
+            bgGradC1: '#8888CC',
             bgGradC2: '#DDAACC',
             bgGradAngle: 135
         },
@@ -1869,8 +1869,8 @@ function defaultWidget(type) {
             w: 240, h: 120,
             props: {
                 bgType: 'solid', // solid / gradient / none
-                bgColor: '#8889CD',
-                bgGradC1: '#8889CD',
+                bgColor: '#8888CC',
+                bgGradC1: '#8888CC',
                 bgGradC2: '#DDAACC',
                 bgGradAngle: 135,
                 borderWidth: 0,
@@ -1889,8 +1889,8 @@ function defaultWidget(type) {
             props: {
                 shape: 'circle',  // 'circle' | 'ellipse' | 'diamond' | 'pill' | 'rectangle'
                 bgType: 'solid',
-                bgColor: '#8889CD',
-                bgGradC1: '#8889CD',
+                bgColor: '#8888CC',
+                bgGradC1: '#8888CC',
                 bgGradC2: '#DDAACC',
                 bgGradAngle: 135,
                 borderWidth: 0,
@@ -1930,9 +1930,9 @@ function defaultWidget(type) {
                 maxValue: 20,
                 gridLevels: 4,
                 startAngle: 0,
-                fillColor: '#8889CD',
+                fillColor: '#8888CC',
                 fillOpacity: 30,
-                lineColor: '#8889CD',
+                lineColor: '#8888CC',
                 lineWidth: 2,
                 gridColor: '#cccccc',
                 showLabels: true,
@@ -1956,7 +1956,7 @@ function defaultWidget(type) {
                 valueFormat: 'value/max',  // 'value/max' | 'value' | 'percent' | 'hidden'
                 showLabel: true,
                 direction: 'horizontal',   // 'horizontal' | 'vertical'
-                barColor: '#8889CD',
+                barColor: '#8888CC',
                 trackColor: '#e5e5e5',
                 textColor: '#1a1a1a',
                 barThickness: 16,
@@ -2002,7 +2002,7 @@ function defaultWidget(type) {
                 // 박스
                 bgColor: 'transparent',
                 showLeftBar: true,
-                leftBarColor: '#8889CD',
+                leftBarColor: '#8888CC',
                 leftBarThickness: 3,
                 paddingV: 12,
                 paddingH: 14,
@@ -2027,7 +2027,7 @@ function defaultWidget(type) {
                 // key
                 keyFontSize: 11,
                 keyFontWeight: 600,
-                keyColor: '#8889CD',
+                keyColor: '#8888CC',
                 keyAlign: 'left',           // 'left' | 'center' | 'right'
                 keyUppercase: true,
                 keyItalic: false,
@@ -2077,7 +2077,7 @@ function defaultWidget(type) {
                 letterSpacing: 0.5,
                 // 색상 (기본값 — 개별 색 OFF일 때 적용)
                 bgColor: '#DDAACC',
-                borderColor: '#8889CD',
+                borderColor: '#8888CC',
                 borderWidth: 1,
                 textColor: '#1a1a1a',
                 useIndividualColor: false,  // 개별 색 사용 토글
@@ -2104,7 +2104,7 @@ function defaultWidget(type) {
                 // 제목
                 titleFontSize: 11,
                 titleFontWeight: 800,
-                titleColor: '#8889CD',
+                titleColor: '#8888CC',
                 titleAlign: 'left',         // 'left' | 'center' | 'right'
                 titleUppercase: true,
                 titleItalic: false,
@@ -2164,12 +2164,12 @@ function defaultWidget(type) {
                 mainFontWeight: 800,
                 mainColor: '#BB6688',
                 // 보조 색 (prefix/separator/total/suffix 공통)
-                auxColor: '#8889CD',
+                auxColor: '#8888CC',
                 // 박스
                 boxOn: false,
                 bgColor: '#DDAACC',
                 borderOn: false,
-                borderColor: '#8889CD',
+                borderColor: '#8888CC',
                 borderWidth: 1,
                 paddingV: 4,
                 paddingH: 10,
@@ -2205,7 +2205,7 @@ function defaultWidget(type) {
                 labelFontFamily: 'Noto Sans KR',
                 labelFontSize: 9,
                 labelFontWeight: 700,
-                labelColor: '#8889CD',
+                labelColor: '#8888CC',
                 labelUppercase: true,
                 labelLetterSpacing: 2,
                 labelItalic: false,
@@ -2229,7 +2229,7 @@ function defaultWidget(type) {
                 boxOn: true,
                 bgColor: '#DDAACC',
                 borderOn: true,
-                borderColor: '#8889CD',
+                borderColor: '#8888CC',
                 borderWidth: 1,
                 paddingV: 10,
                 paddingH: 12,
@@ -2284,7 +2284,7 @@ function defaultWidget(type) {
                 badgeBoxOn: true,
                 badgeBgColor: '#DDAACC',
                 badgeBorderOn: true,
-                badgeBorderColor: '#8889CD',
+                badgeBorderColor: '#8888CC',
                 badgeBorderWidth: 1,
                 badgePaddingV: 10,
                 badgePaddingH: 8,
@@ -4502,7 +4502,7 @@ function addConnection(fromWidget, fromAnchor, toWidget, toAnchor) {
         fromAnchor: fromAnchor,
         toAnchor: toAnchor,
         shape: 'curve',          // 'line' | 'curve' | 'orthogonal'
-        color: '#8889CD',
+        color: '#8888CC',
         thickness: 2,
         dash: 'solid',           // 'solid' | 'dashed' | 'dotted'
         opacity: 100,
@@ -5330,7 +5330,7 @@ function renderColorRow(idPrefix, hex, callback) {
         })(this.value)">
     </div>
     <div class="palette-strip">
-        ${['#8889CD','#DDAACC','#CCAA88','#BB6688','#884499','#EE1166','#FF6699','#00BBDD','#FF7722','#0077DD','#ffffff','#000000'].map(c =>
+        ${['#8888CC','#DDAACC','#CCAA88','#BB6688','#884499','#EE1166','#FF6699','#00BBDD','#FF7722','#0077DD','#ffffff','#000000'].map(c =>
             `<div class="palette-dot" style="background:${c};" onclick="(function(value){${callback}})('${c}')"></div>`
         ).join('')}
     </div>`;
