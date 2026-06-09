@@ -584,10 +584,13 @@
         <h2>캔버스</h2>
         <div class="chips" id="presetChips">
           <button class="chip" data-preset="custom">자유</button>
+          <button class="chip" data-preset="360,360">360<span class="dim">×360</span></button>
+          <button class="chip" data-preset="520,520">520<span class="dim">×520</span></button>
           <button class="chip active" data-preset="1024,1024">1024<span class="dim">×1024</span></button>
           <button class="chip" data-preset="1216,832">1216<span class="dim">×832</span></button>
           <button class="chip" data-preset="832,1216">832<span class="dim">×1216</span></button>
           <button class="chip" data-preset="768,1344">768<span class="dim">×1344</span></button>
+          <button class="chip" data-preset="1080,1920">1080<span class="dim">×1920</span></button>
         </div>
         <div class="grid-2" style="margin-top:12px" id="customSize" hidden>
           <div class="field">
@@ -984,6 +987,53 @@
     /* ===== 드래그 정렬 (Pointer Events, 모바일/데스크탑 통일) ===== */
     let dragState = null;
 
+    function updateDragHitTest(clientY) {
+      if (!dragState) return;
+      const items = $('#imageList').querySelectorAll('.image-item');
+      let targetIdx = -1;
+      let dropPos = null;
+      items.forEach((el, i) => {
+        el.classList.remove('drag-over-above', 'drag-over-below');
+        if (i === dragState.fromIdx) return;
+        const rect = el.getBoundingClientRect();
+        if (clientY >= rect.top && clientY <= rect.bottom) {
+          const mid = (rect.top + rect.bottom) / 2;
+          if (clientY < mid) {
+            el.classList.add('drag-over-above');
+            targetIdx = i;
+            dropPos = 'above';
+          } else {
+            el.classList.add('drag-over-below');
+            targetIdx = i;
+            dropPos = 'below';
+          }
+        }
+      });
+      dragState.targetIdx = targetIdx;
+      dragState.dropPos = dropPos;
+    }
+
+    function autoScrollTick() {
+      if (!dragState) return;
+      const y = dragState.lastY;
+      if (y != null) {
+        const EDGE = 80;       // 가장자리 감지 영역(px)
+        const MAX_SPEED = 14;  // 최대 스크롤 속도(px/frame)
+        const vh = window.innerHeight;
+        let dy = 0;
+        if (y < EDGE) {
+          dy = -MAX_SPEED * (1 - y / EDGE);
+        } else if (y > vh - EDGE) {
+          dy = MAX_SPEED * (1 - (vh - y) / EDGE);
+        }
+        if (dy !== 0) {
+          window.scrollBy(0, dy);
+          updateDragHitTest(y); // 스크롤 후 hit-test 재계산
+        }
+      }
+      dragState.rafId = requestAnimationFrame(autoScrollTick);
+    }
+
     function setupDragHandle(itemEl, handleEl, fromIdx) {
       handleEl.addEventListener('pointerdown', (e) => {
         if (state.images.length < 2) return;
@@ -995,39 +1045,22 @@
           itemEl,
           targetIdx: -1,
           dropPos: null,
+          lastY: e.clientY,
+          rafId: null,
         };
         itemEl.classList.add('dragging');
+        dragState.rafId = requestAnimationFrame(autoScrollTick);
       });
 
       handleEl.addEventListener('pointermove', (e) => {
         if (!dragState || dragState.pointerId !== e.pointerId) return;
-        const list = $('#imageList');
-        const items = list.querySelectorAll('.image-item');
-        let targetIdx = -1;
-        let dropPos = null;
-        items.forEach((el, i) => {
-          el.classList.remove('drag-over-above', 'drag-over-below');
-          if (i === dragState.fromIdx) return;
-          const rect = el.getBoundingClientRect();
-          if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
-            const mid = (rect.top + rect.bottom) / 2;
-            if (e.clientY < mid) {
-              el.classList.add('drag-over-above');
-              targetIdx = i;
-              dropPos = 'above';
-            } else {
-              el.classList.add('drag-over-below');
-              targetIdx = i;
-              dropPos = 'below';
-            }
-          }
-        });
-        dragState.targetIdx = targetIdx;
-        dragState.dropPos = dropPos;
+        dragState.lastY = e.clientY;
+        updateDragHitTest(e.clientY);
       });
 
       const endDrag = (e) => {
         if (!dragState || dragState.pointerId !== e.pointerId) return;
+        if (dragState.rafId) cancelAnimationFrame(dragState.rafId);
         const { fromIdx: src, targetIdx, dropPos, itemEl: el } = dragState;
         el.classList.remove('dragging');
         $('#imageList').querySelectorAll('.image-item').forEach(n => {
