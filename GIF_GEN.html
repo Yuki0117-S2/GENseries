@@ -349,6 +349,20 @@
       padding: 0;
     }
     .image-item .ctrl button.del:active { color: var(--danger); border-color: var(--danger); }
+    .image-item .ctrl button.handle {
+      cursor: grab;
+      touch-action: none;
+      color: var(--c1);
+    }
+    .image-item .ctrl button.handle:active { cursor: grabbing; background: var(--panel); }
+    .image-item.dragging {
+      opacity: 0.5;
+      box-shadow: 0 8px 20px rgba(136, 136, 204, 0.35);
+      transform: scale(0.98);
+      border-color: var(--c1);
+    }
+    .image-item.drag-over-above { box-shadow: 0 -2px 0 0 var(--c1) inset; }
+    .image-item.drag-over-below { box-shadow: 0 2px 0 0 var(--c1) inset; }
 
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
@@ -937,15 +951,17 @@
             <div class="name"></div>
           </div>
           <div class="ctrl">
+            <button class="handle" data-act="handle" title="드래그로 정렬">≡</button>
             <button data-act="up" title="위로">↑</button>
             <button data-act="down" title="아래">↓</button>
             <button class="del" data-act="del" title="삭제">×</button>
           </div>
         `;
         item.querySelector('.name').textContent = img.name;
-        item.querySelectorAll('button').forEach(btn => {
+        item.querySelectorAll('button:not(.handle)').forEach(btn => {
           btn.addEventListener('click', () => handleImageAction(idx, btn.dataset.act));
         });
+        setupDragHandle(item, item.querySelector('.handle'), idx);
         list.appendChild(item);
       });
     }
@@ -963,6 +979,76 @@
       renderDurationList();
       updateBuildButton();
       schedulePreview();
+    }
+
+    /* ===== 드래그 정렬 (Pointer Events, 모바일/데스크탑 통일) ===== */
+    let dragState = null;
+
+    function setupDragHandle(itemEl, handleEl, fromIdx) {
+      handleEl.addEventListener('pointerdown', (e) => {
+        if (state.images.length < 2) return;
+        e.preventDefault();
+        try { handleEl.setPointerCapture(e.pointerId); } catch (_) {}
+        dragState = {
+          fromIdx,
+          pointerId: e.pointerId,
+          itemEl,
+          targetIdx: -1,
+          dropPos: null,
+        };
+        itemEl.classList.add('dragging');
+      });
+
+      handleEl.addEventListener('pointermove', (e) => {
+        if (!dragState || dragState.pointerId !== e.pointerId) return;
+        const list = $('#imageList');
+        const items = list.querySelectorAll('.image-item');
+        let targetIdx = -1;
+        let dropPos = null;
+        items.forEach((el, i) => {
+          el.classList.remove('drag-over-above', 'drag-over-below');
+          if (i === dragState.fromIdx) return;
+          const rect = el.getBoundingClientRect();
+          if (e.clientY >= rect.top && e.clientY <= rect.bottom) {
+            const mid = (rect.top + rect.bottom) / 2;
+            if (e.clientY < mid) {
+              el.classList.add('drag-over-above');
+              targetIdx = i;
+              dropPos = 'above';
+            } else {
+              el.classList.add('drag-over-below');
+              targetIdx = i;
+              dropPos = 'below';
+            }
+          }
+        });
+        dragState.targetIdx = targetIdx;
+        dragState.dropPos = dropPos;
+      });
+
+      const endDrag = (e) => {
+        if (!dragState || dragState.pointerId !== e.pointerId) return;
+        const { fromIdx: src, targetIdx, dropPos, itemEl: el } = dragState;
+        el.classList.remove('dragging');
+        $('#imageList').querySelectorAll('.image-item').forEach(n => {
+          n.classList.remove('drag-over-above', 'drag-over-below');
+        });
+        dragState = null;
+        if (targetIdx < 0 || targetIdx === src) return;
+        const moved = state.images[src];
+        state.images.splice(src, 1);
+        let destIdx = targetIdx;
+        if (targetIdx > src) destIdx -= 1;
+        if (dropPos === 'below') destIdx += 1;
+        state.images.splice(destIdx, 0, moved);
+        renderImageList();
+        renderDurationList();
+        updateBuildButton();
+        schedulePreview();
+      };
+
+      handleEl.addEventListener('pointerup', endDrag);
+      handleEl.addEventListener('pointercancel', endDrag);
     }
 
     /* ===== 프레임별 duration ===== */
