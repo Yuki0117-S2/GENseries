@@ -1,0 +1,2172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#16161c">
+  <title>GIF_GEN v1.0</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --c1: #8888CC;
+      --c2: #DDAACC;
+      --c3: #CCAA88;
+      --c4: #BB6688;
+
+      --bg: #16161c;
+      --panel: #20202a;
+      --panel-2: #2a2a36;
+      --line: #353544;
+      --ink: #e5e3eb;
+      --ink-dim: #8a8794;
+      --ink-mute: #5a5868;
+
+      --accent-soft: rgba(136, 136, 204, 0.12);
+      --danger: #EE1166;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
+    body {
+      font-family: 'Noto Sans KR', -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overscroll-behavior-y: contain;
+    }
+
+    .app {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 0 16px 80px;
+    }
+
+    .header {
+      padding: 18px 0 12px;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .header h1 {
+      margin: 0;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--c1);
+    }
+    .header .ver {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--ink-mute);
+    }
+
+    .back-to-main {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 10px;
+      background: transparent;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--ink-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; font-weight: 700;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.15s ease;
+      margin: 16px 0 0;
+    }
+    .back-to-main:hover, .back-to-main:active {
+      border-color: var(--c1);
+      color: var(--c1);
+      background: rgba(136,136,204,0.08);
+    }
+
+    .tabbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--bg);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      padding: 6px 0 10px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 16px;
+    }
+    .tabbar button {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--ink-dim);
+      padding: 12px 8px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: color .15s, background .15s, border-color .15s;
+      min-height: 44px;
+    }
+    .tabbar button.active {
+      color: var(--c1);
+      background: var(--accent-soft);
+      border-color: rgba(136, 136, 204, 0.3);
+      font-weight: 700;
+    }
+    .tabbar button .icon {
+      font-size: 16px;
+      margin-right: 4px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .panel h2 {
+      margin: 0 0 12px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--c2);
+      letter-spacing: 0.3px;
+    }
+    .hint {
+      font-size: 12px;
+      color: var(--ink-mute);
+      line-height: 1.5;
+    }
+
+    .tab-view { display: none; }
+    .tab-view.active { display: block; }
+
+    .field { margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    .field > label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-dim);
+      margin-bottom: 6px;
+      letter-spacing: 0.3px;
+    }
+
+    input[type="number"], input[type="text"] {
+      width: 100%;
+      padding: 11px 12px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--ink);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+    }
+    input[type="number"]:focus, input[type="text"]:focus {
+      outline: none;
+      border-color: var(--c1);
+    }
+    input[type="color"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel-2);
+      cursor: pointer;
+    }
+    input[type="color"]::-webkit-color-swatch-wrapper { padding: 4px; }
+    input[type="color"]::-webkit-color-swatch { border: none; border-radius: 6px; }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .chip {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      color: var(--ink-dim);
+      padding: 9px 12px;
+      border-radius: 999px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all .12s;
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+    }
+    .chip.active {
+      background: var(--accent-soft);
+      border-color: var(--c1);
+      color: var(--c1);
+      font-weight: 600;
+    }
+    .chip .dim { color: var(--ink-mute); font-size: 11px; margin-left: 2px; }
+
+    .toggle {
+      display: inline-flex;
+      gap: 0;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 3px;
+      width: 100%;
+    }
+    .toggle button {
+      flex: 1;
+      background: transparent;
+      border: 0;
+      color: var(--ink-dim);
+      padding: 9px 8px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      min-height: 38px;
+    }
+    .toggle button.active {
+      background: var(--c1);
+      color: #fff;
+      font-weight: 600;
+    }
+    .toggle button.disabled {
+      color: var(--ink-mute);
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    .toggle button.disabled::after {
+      content: ' · 준비 중';
+      font-size: 10px;
+    }
+
+    .dropzone {
+      border: 2px dashed var(--line);
+      border-radius: 14px;
+      padding: 24px 16px;
+      text-align: center;
+      color: var(--ink-dim);
+      cursor: pointer;
+      transition: all .15s;
+      background: var(--panel-2);
+    }
+    .dropzone.dragover {
+      border-color: var(--c1);
+      background: var(--accent-soft);
+      color: var(--c1);
+    }
+    .dropzone .icon { font-size: 28px; margin-bottom: 6px; display: block; line-height: 1; }
+    .dropzone .label { font-size: 13px; font-weight: 600; }
+    .dropzone .hint-inline { font-size: 11px; color: var(--ink-mute); margin-top: 4px; }
+
+    .image-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .image-list:empty { display: none; }
+    .image-item {
+      display: grid;
+      grid-template-columns: 56px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 8px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    .image-item img {
+      width: 56px;
+      height: 56px;
+      object-fit: cover;
+      border-radius: 8px;
+      background: var(--bg);
+    }
+    .image-item .meta { min-width: 0; }
+    .image-item .num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--c1);
+      font-weight: 600;
+    }
+    .image-item .name {
+      font-size: 12px;
+      color: var(--ink-dim);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+    .image-item .ctrl {
+      display: flex;
+      gap: 4px;
+    }
+    .image-item .ctrl button {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      color: var(--ink-dim);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .image-item .ctrl button.del:active { color: var(--danger); border-color: var(--danger); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .color-row {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn-primary {
+      background: var(--c1);
+      border: 0;
+      color: #fff;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      width: 100%;
+      min-height: 50px;
+      letter-spacing: 0.3px;
+    }
+    .btn-primary:disabled {
+      background: var(--panel-2);
+      color: var(--ink-mute);
+      cursor: not-allowed;
+    }
+
+    .warn {
+      background: rgba(238, 17, 102, 0.08);
+      border: 1px solid rgba(238, 17, 102, 0.3);
+      color: #ff7799;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      margin-top: 12px;
+      display: none;
+    }
+    .warn.show { display: block; }
+
+    .status {
+      font-size: 12px;
+      color: var(--ink-dim);
+      margin-top: 8px;
+      min-height: 18px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .preview-box {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      max-height: 360px;
+      background: var(--panel-2);
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink-mute);
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .duration-item {
+      display: grid;
+      grid-template-columns: 48px 1fr 96px;
+      gap: 10px;
+      align-items: center;
+      padding: 8px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    .duration-item img {
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .duration-item input {
+      text-align: right;
+      font-size: 14px;
+      padding: 8px 10px;
+    }
+    .duration-item .meta .num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--c1);
+      font-weight: 600;
+    }
+    .duration-item .meta .name {
+      font-size: 11px;
+      color: var(--ink-dim);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .preview-box img {
+      max-width: 100%;
+      max-height: 360px;
+      border-radius: 8px;
+      background: var(--bg);
+    }
+    .preview-box canvas {
+      max-width: 100%;
+      max-height: 360px;
+      border-radius: 8px;
+      background: var(--bg);
+      image-rendering: auto;
+    }
+    .preview-box.has-content {
+      border-style: solid;
+      padding: 8px;
+    }
+
+    .result-box {
+      margin-top: 12px;
+      padding: 14px;
+      background: var(--panel-2);
+      border: 1px solid var(--c1);
+      border-radius: 12px;
+      display: none;
+    }
+    .result-box.show { display: block; }
+    .result-box h3 {
+      margin: 0 0 10px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 16px;
+      color: var(--c2);
+    }
+    .result-box img {
+      width: 100%;
+      max-height: 280px;
+      object-fit: contain;
+      border-radius: 8px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      margin-bottom: 10px;
+    }
+    .result-box .meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--ink-mute);
+      margin-bottom: 10px;
+    }
+    .result-box .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .result-box .row button {
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      border-radius: 10px;
+      border: 0;
+      cursor: pointer;
+      font-family: inherit;
+      min-height: 44px;
+    }
+    .result-box .btn-dl { background: var(--c1); color: #fff; }
+    .result-box .btn-share { background: var(--c4); color: #fff; }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--bg);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 8px;
+      display: none;
+    }
+    .progress-bar.show { display: block; }
+    .progress-bar .fill {
+      height: 100%;
+      background: var(--c1);
+      width: 0%;
+      transition: width 0.2s ease;
+    }
+
+    @media (max-width: 380px) {
+      .app { padding: 0 12px 80px; }
+      .panel { padding: 14px; }
+      .header h1 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <a href="index.html" class="back-to-main" title="메인으로">← 메인</a>
+    <header class="header">
+      <h1>GIF_GEN</h1>
+      <span class="ver">v1.0</span>
+    </header>
+
+    <nav class="tabbar" role="tablist">
+      <button class="active" data-tab="photo" role="tab"><span class="icon">📷</span>사진</button>
+      <button data-tab="style" role="tab"><span class="icon">🎨</span>꾸미기</button>
+      <button data-tab="build" role="tab"><span class="icon">▶️</span>만들기</button>
+    </nav>
+
+    <!-- 📷 사진 -->
+    <section class="tab-view active" data-view="photo">
+      <div class="panel">
+        <h2>이미지</h2>
+        <div class="dropzone" id="dropzone">
+          <span class="icon">＋</span>
+          <div class="label">사진 추가</div>
+          <div class="hint-inline">탭해서 선택 · 최대 20장</div>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" multiple hidden>
+        <div class="image-list" id="imageList"></div>
+        <div class="status" id="imageStatus"></div>
+      </div>
+
+      <div class="panel">
+        <h2>캔버스</h2>
+        <div class="chips" id="presetChips">
+          <button class="chip" data-preset="custom">자유</button>
+          <button class="chip active" data-preset="1024,1024">1024<span class="dim">×1024</span></button>
+          <button class="chip" data-preset="1216,832">1216<span class="dim">×832</span></button>
+          <button class="chip" data-preset="832,1216">832<span class="dim">×1216</span></button>
+          <button class="chip" data-preset="768,1344">768<span class="dim">×1344</span></button>
+        </div>
+        <div class="grid-2" style="margin-top:12px" id="customSize" hidden>
+          <div class="field">
+            <label>가로</label>
+            <input type="number" id="canvasW" min="200" max="2000" value="1024">
+          </div>
+          <div class="field">
+            <label>세로</label>
+            <input type="number" id="canvasH" min="200" max="2000" value="1024">
+          </div>
+        </div>
+        <div class="warn" id="sizeWarn">⚠ 한쪽 1500px 넘으면 인코딩 느려질 수 있어</div>
+      </div>
+
+      <div class="panel">
+        <h2>이미지 맞춤</h2>
+        <div class="field">
+          <label>비율 안 맞을 때</label>
+          <div class="toggle" id="fitToggle">
+            <button class="active" data-fit="contain">전체 (여백)</button>
+            <button data-fit="cover">꽉 채우기 (잘림)</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 🎨 꾸미기 -->
+    <section class="tab-view" data-view="style">
+      <div class="panel">
+        <h2>배경</h2>
+        <div class="field">
+          <div class="toggle" id="bgToggle">
+            <button class="active" data-bg="solid">단색</button>
+            <button data-bg="transparent">투명</button>
+          </div>
+        </div>
+        <div class="field" id="bgColorField">
+          <label>배경색</label>
+          <div class="color-row">
+            <input type="color" id="bgColor" value="#FFFFFF">
+            <input type="text" id="bgColorHex" value="#FFFFFF">
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>테두리</h2>
+        <div class="field">
+          <div class="toggle" id="borderToggle">
+            <button class="active" data-border="on">테두리 있음</button>
+            <button data-border="off">없음</button>
+          </div>
+        </div>
+        <div class="field" id="borderColorField">
+          <label>테두리 색</label>
+          <div class="color-row">
+            <input type="color" id="borderColor" value="#8888CC">
+            <input type="text" id="borderColorHex" value="#8888CC">
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>오버레이 PNG</h2>
+        <div class="hint" style="margin-bottom:10px">모든 프레임 위에 깔리는 한 장. 캔버스 비율 맞춰서 만들어둬.</div>
+        <div class="dropzone" id="overlayDropzone">
+          <span class="icon">⌗</span>
+          <div class="label">오버레이 추가</div>
+          <div class="hint-inline">PNG 권장 (투명 지원)</div>
+        </div>
+        <input type="file" id="overlayInput" accept="image/*" hidden>
+        <div class="image-list" id="overlayList"></div>
+      </div>
+    </section>
+
+    <!-- ▶️ 만들기 -->
+    <section class="tab-view" data-view="build">
+      <div class="panel">
+        <h2>프레임 시간</h2>
+        <div class="field">
+          <label>전체 (ms · 1000 = 1초)</label>
+          <input type="number" id="globalDuration" min="20" max="5000" value="120">
+        </div>
+        <div class="hint">사진 추가하면 프레임별 미세조정 가능</div>
+        <div class="image-list" id="durationList" style="margin-top:12px"></div>
+      </div>
+
+      <div class="panel">
+        <h2>출력 형식</h2>
+        <div class="field">
+          <div class="toggle" id="formatToggle">
+            <button class="active" data-format="gif">GIF</button>
+            <button class="disabled" data-format="webp" disabled>WebP</button>
+          </div>
+          <div class="hint" id="formatHint" style="margin-top:8px">호환성 최강. 카톡·SNS 다 됨.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>미리보기 & 만들기</h2>
+        <div class="preview-box" id="previewBox">사진 추가하면 첫 프레임 미리보기</div>
+        <button class="btn-primary" id="buildBtn" disabled>이미지 먼저 추가해</button>
+        <div class="progress-bar" id="progressBar"><div class="fill" id="progressFill"></div></div>
+        <div class="status" id="buildStatus"></div>
+        <div class="result-box" id="resultBox">
+          <h3>완성</h3>
+          <img id="resultImg" alt="">
+          <div class="meta" id="resultMeta"></div>
+          <div class="row">
+            <button class="btn-dl" id="downloadBtn">다운로드</button>
+            <button class="btn-share" id="shareBtn">공유</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    'use strict';
+
+    /* =========================================================
+       GIF_GEN v1.0 — 1단계: 골격
+       - 탭 전환, 입력 폼, 자동 저장
+       - 인코딩/합성/미리보기는 2단계
+       ========================================================= */
+
+    const STORAGE_KEY = 'GIF_GEN_settings_v1';
+
+    const state = {
+      images: [],
+      overlay: null,
+      preset: '1024,1024',
+      canvasW: 1024,
+      canvasH: 1024,
+      fit: 'contain',
+      bgMode: 'solid',
+      bgColor: '#FFFFFF',
+      borderOn: true,
+      borderColor: '#8888CC',
+      globalDuration: 120,
+      format: 'gif',
+      activeTab: 'photo',
+    };
+
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+    const uid = () => Math.random().toString(36).slice(2, 9);
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+    /* ===== 탭 전환 ===== */
+    $$('.tabbar button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        state.activeTab = tab;
+        $$('.tabbar button').forEach(b => b.classList.toggle('active', b === btn));
+        $$('.tab-view').forEach(v => v.classList.toggle('active', v.dataset.view === tab));
+        saveSettings();
+        window.scrollTo({ top: 0 });
+      });
+    });
+
+    /* ===== 프리셋 ===== */
+    $$('#presetChips .chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const preset = chip.dataset.preset;
+        state.preset = preset;
+        $$('#presetChips .chip').forEach(c => c.classList.toggle('active', c === chip));
+
+        if (preset === 'custom') {
+          $('#customSize').hidden = false;
+        } else {
+          $('#customSize').hidden = true;
+          const [w, h] = preset.split(',').map(Number);
+          state.canvasW = w;
+          state.canvasH = h;
+          $('#canvasW').value = w;
+          $('#canvasH').value = h;
+        }
+        checkSizeWarn();
+        saveSettings();
+        schedulePreview();
+      });
+    });
+
+    $('#canvasW').addEventListener('input', e => {
+      state.canvasW = clamp(+e.target.value || 1024, 200, 2000);
+      checkSizeWarn();
+      saveSettings();
+      schedulePreview();
+    });
+    $('#canvasH').addEventListener('input', e => {
+      state.canvasH = clamp(+e.target.value || 1024, 200, 2000);
+      checkSizeWarn();
+      saveSettings();
+      schedulePreview();
+    });
+
+    function checkSizeWarn() {
+      const big = Math.max(state.canvasW, state.canvasH) > 1500;
+      $('#sizeWarn').classList.toggle('show', big);
+    }
+
+    /* ===== Toggle 그룹들 ===== */
+    function bindToggle(selector, datasetKey, onChange) {
+      $$(selector + ' button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (btn.classList.contains('disabled')) return;
+          $$(selector + ' button').forEach(b => {
+            if (!b.classList.contains('disabled')) {
+              b.classList.toggle('active', b === btn);
+            }
+          });
+          onChange(btn.dataset[datasetKey], btn);
+          saveSettings();
+          schedulePreview();
+        });
+      });
+    }
+
+    bindToggle('#fitToggle', 'fit', v => { state.fit = v; });
+    bindToggle('#bgToggle', 'bg', v => {
+      state.bgMode = v;
+      $('#bgColorField').hidden = (v === 'transparent');
+    });
+    bindToggle('#borderToggle', 'border', v => {
+      state.borderOn = (v === 'on');
+      $('#borderColorField').hidden = !state.borderOn;
+    });
+    bindToggle('#formatToggle', 'format', v => {
+      state.format = v;
+      $('#formatHint').textContent = (v === 'gif')
+        ? '호환성 최강. 카톡·SNS 다 됨.'
+        : '화질·용량 우수. 일부 환경에선 정적 표시될 수 있음.';
+    });
+
+    /* ===== 색상 입력 동기화 ===== */
+    function bindColorPair(colorId, hexId, stateKey) {
+      const colorEl = $('#' + colorId);
+      const hexEl = $('#' + hexId);
+      colorEl.addEventListener('input', () => {
+        const v = colorEl.value.toUpperCase();
+        hexEl.value = v;
+        state[stateKey] = v;
+        saveSettings();
+        schedulePreview();
+      });
+      hexEl.addEventListener('input', () => {
+        let v = hexEl.value.trim().toUpperCase();
+        if (!v.startsWith('#')) v = '#' + v;
+        if (/^#[0-9A-F]{6}$/.test(v)) {
+          colorEl.value = v;
+          state[stateKey] = v;
+          saveSettings();
+          schedulePreview();
+        }
+      });
+    }
+    bindColorPair('bgColor', 'bgColorHex', 'bgColor');
+    bindColorPair('borderColor', 'borderColorHex', 'borderColor');
+
+    /* ===== 전역 duration ===== */
+    $('#globalDuration').addEventListener('input', e => {
+      const v = clamp(+e.target.value || 120, 20, 5000);
+      state.globalDuration = v;
+      saveSettings();
+    });
+
+    /* ===== 이미지 업로드 ===== */
+    function bindDropzone(zone, input, onFiles) {
+      zone.addEventListener('click', () => input.click());
+      zone.addEventListener('dragover', e => {
+        e.preventDefault();
+        zone.classList.add('dragover');
+      });
+      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        onFiles([...e.dataTransfer.files]);
+      });
+      input.addEventListener('change', () => {
+        onFiles([...input.files]);
+        input.value = '';
+      });
+    }
+
+    bindDropzone($('#dropzone'), $('#fileInput'), addImages);
+
+    function addImages(files) {
+      const imageFiles = files.filter(f => f.type.startsWith('image/'));
+      if (!imageFiles.length) {
+        setStatus('imageStatus', '이미지 파일만 추가 가능');
+        return;
+      }
+      let added = 0;
+      for (const file of imageFiles) {
+        if (state.images.length >= 20) {
+          setStatus('imageStatus', '최대 20장까지');
+          break;
+        }
+        state.images.push({
+          id: uid(),
+          file,
+          url: URL.createObjectURL(file),
+          name: file.name,
+          duration: state.globalDuration,
+        });
+        added++;
+      }
+      renderImageList();
+      renderDurationList();
+      updateBuildButton();
+      schedulePreview();
+      setStatus('imageStatus', `총 ${state.images.length}장 (방금 ${added}장 추가)`);
+    }
+
+    function renderImageList() {
+      const list = $('#imageList');
+      list.innerHTML = '';
+      state.images.forEach((img, idx) => {
+        const item = document.createElement('div');
+        item.className = 'image-item';
+        item.innerHTML = `
+          <img src="${img.url}" alt="">
+          <div class="meta">
+            <span class="num">#${idx + 1}</span>
+            <div class="name"></div>
+          </div>
+          <div class="ctrl">
+            <button data-act="up" title="위로">↑</button>
+            <button data-act="down" title="아래">↓</button>
+            <button class="del" data-act="del" title="삭제">×</button>
+          </div>
+        `;
+        item.querySelector('.name').textContent = img.name;
+        item.querySelectorAll('button').forEach(btn => {
+          btn.addEventListener('click', () => handleImageAction(idx, btn.dataset.act));
+        });
+        list.appendChild(item);
+      });
+    }
+
+    function handleImageAction(idx, act) {
+      if (act === 'del') {
+        URL.revokeObjectURL(state.images[idx].url);
+        state.images.splice(idx, 1);
+      } else if (act === 'up' && idx > 0) {
+        [state.images[idx - 1], state.images[idx]] = [state.images[idx], state.images[idx - 1]];
+      } else if (act === 'down' && idx < state.images.length - 1) {
+        [state.images[idx], state.images[idx + 1]] = [state.images[idx + 1], state.images[idx]];
+      }
+      renderImageList();
+      renderDurationList();
+      updateBuildButton();
+      schedulePreview();
+    }
+
+    /* ===== 프레임별 duration ===== */
+    function renderDurationList() {
+      const list = $('#durationList');
+      list.innerHTML = '';
+      state.images.forEach((img, idx) => {
+        const item = document.createElement('div');
+        item.className = 'duration-item';
+        item.innerHTML = `
+          <img src="${img.url}" alt="">
+          <div class="meta">
+            <span class="num">#${idx + 1}</span>
+            <div class="name"></div>
+          </div>
+          <input type="number" min="20" max="5000" value="${img.duration}">
+        `;
+        item.querySelector('.name').textContent = img.name;
+        const dInput = item.querySelector('input');
+        dInput.addEventListener('input', () => {
+          img.duration = clamp(+dInput.value || state.globalDuration, 20, 5000);
+        });
+        list.appendChild(item);
+      });
+    }
+
+    /* ===== 오버레이 ===== */
+    bindDropzone($('#overlayDropzone'), $('#overlayInput'), (files) => {
+      if (files[0] && files[0].type.startsWith('image/')) setOverlay(files[0]);
+    });
+
+    function setOverlay(file) {
+      if (state.overlay) URL.revokeObjectURL(state.overlay.url);
+      state.overlay = { file, url: URL.createObjectURL(file), name: file.name };
+      renderOverlayList();
+      schedulePreview();
+    }
+
+    function renderOverlayList() {
+      const list = $('#overlayList');
+      list.innerHTML = '';
+      if (!state.overlay) return;
+      const item = document.createElement('div');
+      item.className = 'image-item';
+      item.innerHTML = `
+        <img src="${state.overlay.url}" alt="">
+        <div class="meta">
+          <span class="num">OVERLAY</span>
+          <div class="name"></div>
+        </div>
+        <div class="ctrl">
+          <button class="del" title="삭제">×</button>
+        </div>
+      `;
+      item.querySelector('.name').textContent = state.overlay.name;
+      item.querySelector('button').addEventListener('click', () => {
+        URL.revokeObjectURL(state.overlay.url);
+        state.overlay = null;
+        renderOverlayList();
+        schedulePreview();
+      });
+      list.appendChild(item);
+    }
+
+    /* ===== 만들기 버튼 ===== */
+    function updateBuildButton() {
+      const btn = $('#buildBtn');
+      if (state.images.length === 0) {
+        btn.disabled = true;
+        btn.textContent = '이미지 먼저 추가해';
+      } else {
+        btn.disabled = false;
+        btn.textContent = `${state.format.toUpperCase()} 만들기 (${state.images.length}장)`;
+      }
+    }
+
+    $('#buildBtn').addEventListener('click', () => {
+      buildGIF();
+    });
+
+    /* ===== 상태 메세지 ===== */
+    function setStatus(elId, msg) {
+      const el = document.getElementById(elId);
+      if (el) el.textContent = msg;
+    }
+
+    /* ===== 자동 저장 ===== */
+    function saveSettings() {
+      try {
+        const toSave = {
+          preset: state.preset,
+          canvasW: state.canvasW,
+          canvasH: state.canvasH,
+          fit: state.fit,
+          bgMode: state.bgMode,
+          bgColor: state.bgColor,
+          borderOn: state.borderOn,
+          borderColor: state.borderColor,
+          globalDuration: state.globalDuration,
+          format: state.format,
+          activeTab: state.activeTab,
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+      } catch (e) { /* localStorage 사용 불가 환경 */ }
+    }
+
+    function loadSettings() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        Object.assign(state, saved);
+        applyStateToUI();
+      } catch (e) { /* 무시 */ }
+    }
+
+    function applyStateToUI() {
+      $$('.tabbar button').forEach(b => b.classList.toggle('active', b.dataset.tab === state.activeTab));
+      $$('.tab-view').forEach(v => v.classList.toggle('active', v.dataset.view === state.activeTab));
+
+      $$('#presetChips .chip').forEach(c => c.classList.toggle('active', c.dataset.preset === state.preset));
+      $('#canvasW').value = state.canvasW;
+      $('#canvasH').value = state.canvasH;
+      $('#customSize').hidden = (state.preset !== 'custom');
+      checkSizeWarn();
+
+      $$('#fitToggle button').forEach(b => b.classList.toggle('active', b.dataset.fit === state.fit));
+
+      $$('#bgToggle button').forEach(b => b.classList.toggle('active', b.dataset.bg === state.bgMode));
+      $('#bgColorField').hidden = (state.bgMode === 'transparent');
+      $('#bgColor').value = state.bgColor;
+      $('#bgColorHex').value = state.bgColor;
+
+      $$('#borderToggle button').forEach(b => b.classList.toggle('active', (b.dataset.border === 'on') === state.borderOn));
+      $('#borderColorField').hidden = !state.borderOn;
+      $('#borderColor').value = state.borderColor;
+      $('#borderColorHex').value = state.borderColor;
+
+      $('#globalDuration').value = state.globalDuration;
+
+      $$('#formatToggle button').forEach(b => b.classList.toggle('active', b.dataset.format === state.format));
+      $('#formatHint').textContent = (state.format === 'gif')
+        ? '호환성 최강. 카톡·SNS 다 됨.'
+        : '화질·용량 우수. 일부 환경에선 정적 표시될 수 있음.';
+    }
+
+    /* ===== 합성 헬퍼 ===== */
+    function drawRoundedRect(ctx, x, y, w, h, r) {
+      r = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    // url → HTMLImageElement
+    const imgCache = new Map();
+    function loadImageFromUrl(url) {
+      if (imgCache.has(url)) return Promise.resolve(imgCache.get(url));
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => { imgCache.set(url, img); resolve(img); };
+        img.onerror = reject;
+        img.src = url;
+      });
+    }
+
+    // 한 프레임 합성 → canvas 반환
+    function composeFrame(sourceImgEl, overlayImgEl, w, h) {
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+
+      // 배경
+      if (state.bgMode === 'solid') {
+        ctx.fillStyle = state.bgColor;
+        ctx.fillRect(0, 0, w, h);
+      }
+      // transparent면 그대로 (rgba 0,0,0,0)
+
+      const outerPad = Math.max(12, Math.min(w, h) * 0.03);
+      const usableW = w - outerPad * 2;
+      const usableH = h - outerPad * 2;
+
+      const imgW = sourceImgEl.naturalWidth;
+      const imgH = sourceImgEl.naturalHeight;
+      let drawW, drawH;
+      if (state.fit === 'contain') {
+        const s = Math.min(usableW / imgW, usableH / imgH);
+        drawW = imgW * s;
+        drawH = imgH * s;
+      } else {
+        const s = Math.max(usableW / imgW, usableH / imgH);
+        drawW = imgW * s;
+        drawH = imgH * s;
+      }
+      const drawX = (w - drawW) / 2;
+      const drawY = (h - drawH) / 2;
+
+      // cover면 이미지 영역 밖으로 넘침 → clip
+      const radius = Math.max(12, Math.min(usableW, usableH) * 0.035);
+      if (state.fit === 'cover') {
+        ctx.save();
+        drawRoundedRect(ctx, outerPad, outerPad, usableW, usableH, radius);
+        ctx.clip();
+      }
+      ctx.drawImage(sourceImgEl, drawX, drawY, drawW, drawH);
+      if (state.fit === 'cover') ctx.restore();
+
+      // 테두리
+      if (state.borderOn) {
+        const borderW = Math.max(4, Math.min(w, h) * 0.012);
+        ctx.strokeStyle = state.borderColor;
+        ctx.lineWidth = borderW;
+        drawRoundedRect(ctx, outerPad, outerPad, usableW, usableH, radius);
+        ctx.stroke();
+      }
+
+      // 오버레이 (전체 캔버스에 stretch)
+      if (overlayImgEl) {
+        ctx.drawImage(overlayImgEl, 0, 0, w, h);
+      }
+
+      return canvas;
+    }
+
+    /* ===== 미리보기 ===== */
+    let previewTimer = null;
+    function schedulePreview() {
+      clearTimeout(previewTimer);
+      previewTimer = setTimeout(renderPreview, 80);
+    }
+
+    async function renderPreview() {
+      const box = $('#previewBox');
+      if (state.images.length === 0) {
+        box.classList.remove('has-content');
+        box.innerHTML = '사진 추가하면 첫 프레임 미리보기';
+        return;
+      }
+      try {
+        const src = await loadImageFromUrl(state.images[0].url);
+        const overlay = state.overlay ? await loadImageFromUrl(state.overlay.url) : null;
+        const canvas = composeFrame(src, overlay, state.canvasW, state.canvasH);
+        box.classList.add('has-content');
+        box.innerHTML = '';
+        box.appendChild(canvas);
+      } catch (e) {
+        box.innerHTML = '미리보기 실패: ' + e.message;
+      }
+    }
+
+    /* ===== Worker 생성 (gifenc 임베드) ===== */
+    function createEncoderWorker() {
+      const gifencSrc = document.getElementById('gifenc-lib').textContent;
+      const workerCode = gifencSrc + `
+        const { GIFEncoder, quantize, applyPalette } = self.__gifenc;
+
+        self.onmessage = (e) => {
+          try {
+            const { frames, width, height, transparent } = e.data;
+            const gif = GIFEncoder();
+            const total = frames.length;
+            for (let i = 0; i < total; i++) {
+              const { data, delay } = frames[i];
+              const palette = quantize(data, 256, { format: transparent ? 'rgba4444' : 'rgb444' });
+              const index = applyPalette(data, palette, transparent ? 'rgba4444' : 'rgb444');
+              const opts = { palette, delay, first: i === 0 };
+              if (transparent) {
+                opts.transparent = true;
+                opts.transparentIndex = 0;
+              }
+              gif.writeFrame(index, width, height, opts);
+              self.postMessage({ type: 'progress', current: i + 1, total });
+            }
+            gif.finish();
+            const bytes = gif.bytes();
+            self.postMessage({ type: 'done', bytes }, [bytes.buffer]);
+          } catch (err) {
+            self.postMessage({ type: 'error', message: err.message || String(err) });
+          }
+        };
+      `;
+      const blob = new Blob([workerCode], { type: 'application/javascript' });
+      return new Worker(URL.createObjectURL(blob));
+    }
+
+    /* ===== GIF 빌드 ===== */
+    let currentBuild = null;
+
+    async function buildGIF() {
+      if (currentBuild) return;
+      if (state.images.length === 0) return;
+
+      const btn = $('#buildBtn');
+      const progressBar = $('#progressBar');
+      const progressFill = $('#progressFill');
+      btn.disabled = true;
+      btn.textContent = '준비 중...';
+      $('#resultBox').classList.remove('show');
+      progressBar.classList.add('show');
+      progressFill.style.width = '0%';
+
+      const t0 = performance.now();
+
+      try {
+        // 1. 모든 프레임 합성 (메인 스레드)
+        setStatus('buildStatus', '프레임 합성 중...');
+        const overlay = state.overlay ? await loadImageFromUrl(state.overlay.url) : null;
+        const frames = [];
+        for (let i = 0; i < state.images.length; i++) {
+          const src = await loadImageFromUrl(state.images[i].url);
+          const canvas = composeFrame(src, overlay, state.canvasW, state.canvasH);
+          const ctx = canvas.getContext('2d');
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          frames.push({
+            data: imageData.data,
+            delay: state.images[i].duration,
+          });
+          progressFill.style.width = (((i + 1) / state.images.length) * 30) + '%';
+        }
+
+        // 2. Worker로 인코딩
+        setStatus('buildStatus', '인코딩 시작...');
+        const worker = createEncoderWorker();
+        currentBuild = worker;
+
+        const bytes = await new Promise((resolve, reject) => {
+          worker.onmessage = (e) => {
+            const msg = e.data;
+            if (msg.type === 'progress') {
+              setStatus('buildStatus', `인코딩 중 ${msg.current}/${msg.total}`);
+              const pct = 30 + (msg.current / msg.total) * 70;
+              progressFill.style.width = pct + '%';
+            } else if (msg.type === 'done') {
+              resolve(msg.bytes);
+            } else if (msg.type === 'error') {
+              reject(new Error(msg.message));
+            }
+          };
+          worker.onerror = (e) => reject(new Error(e.message || 'worker error'));
+
+          // ArrayBuffer 전송 (Uint8Array.buffer를 transferable로)
+          const buffers = frames.map(f => f.data.buffer);
+          worker.postMessage({
+            frames,
+            width: state.canvasW,
+            height: state.canvasH,
+            transparent: state.bgMode === 'transparent',
+          }, buffers);
+        });
+
+        worker.terminate();
+        currentBuild = null;
+
+        // 3. 결과 표시
+        const blob = new Blob([bytes], { type: 'image/gif' });
+        const url = URL.createObjectURL(blob);
+        $('#resultImg').src = url;
+        const ms = Math.round(performance.now() - t0);
+        const kb = (blob.size / 1024).toFixed(1);
+        $('#resultMeta').textContent =
+          `${state.canvasW}×${state.canvasH} · ${frames.length}프레임 · ${kb} KB · ${ms}ms`;
+        $('#resultBox').classList.add('show');
+        $('#resultBox').dataset.blobUrl = url;
+        $('#resultBox').dataset.filename = makeFilename();
+        progressFill.style.width = '100%';
+        setStatus('buildStatus', '완성!');
+      } catch (e) {
+        setStatus('buildStatus', '오류: ' + e.message);
+        if (currentBuild) { currentBuild.terminate(); currentBuild = null; }
+      } finally {
+        btn.disabled = false;
+        updateBuildButton();
+        setTimeout(() => progressBar.classList.remove('show'), 1500);
+      }
+    }
+
+    function makeFilename() {
+      const d = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      return `GIF_GEN_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.gif`;
+    }
+
+    /* ===== 다운로드 / 공유 ===== */
+    $('#downloadBtn').addEventListener('click', () => {
+      const url = $('#resultBox').dataset.blobUrl;
+      const name = $('#resultBox').dataset.filename;
+      if (!url) return;
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    });
+
+    $('#shareBtn').addEventListener('click', async () => {
+      const url = $('#resultBox').dataset.blobUrl;
+      const name = $('#resultBox').dataset.filename;
+      if (!url) return;
+      try {
+        const blob = await fetch(url).then(r => r.blob());
+        const file = new File([blob], name, { type: 'image/gif' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: name });
+        } else {
+          setStatus('buildStatus', '이 브라우저는 파일 공유 미지원. 다운로드 후 직접 공유');
+        }
+      } catch (e) {
+        if (e.name !== 'AbortError') setStatus('buildStatus', '공유 실패: ' + e.message);
+      }
+    });
+
+    /* ===== 초기화 ===== */
+    loadSettings();
+    updateBuildButton();
+    renderPreview();
+
+    // WebP 비활성 안내 (클릭 시도하면 메시지 표시)
+    document.querySelector('#formatToggle button.disabled').addEventListener('click', () => {
+      setStatus('buildStatus', 'WebP는 v2에서 지원 예정. 지금은 GIF만.');
+    });
+  </script>
+
+<!-- gifenc library (MIT, mattdesl/gifenc) — embedded for offline use -->
+<script id="gifenc-lib">
+(function(global) {
+  var exports = {};
+var __defProp = Object.defineProperty;
+var __markAsModule = (target) => __defProp(target, "__esModule", {value: true});
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, {get: all[name], enumerable: true});
+};
+
+// src/index.js
+__markAsModule(exports);
+__export(exports, {
+  GIFEncoder: () => GIFEncoder,
+  applyPalette: () => applyPalette,
+  default: () => src_default,
+  nearestColor: () => nearestColor,
+  nearestColorIndex: () => nearestColorIndex,
+  nearestColorIndexWithDistance: () => nearestColorIndexWithDistance,
+  prequantize: () => prequantize,
+  quantize: () => quantize,
+  snapColorsToPalette: () => snapColorsToPalette
+});
+
+// src/constants.js
+var constants_default = {
+  signature: "GIF",
+  version: "89a",
+  trailer: 59,
+  extensionIntroducer: 33,
+  applicationExtensionLabel: 255,
+  graphicControlExtensionLabel: 249,
+  imageSeparator: 44,
+  signatureSize: 3,
+  versionSize: 3,
+  globalColorTableFlagMask: 128,
+  colorResolutionMask: 112,
+  sortFlagMask: 8,
+  globalColorTableSizeMask: 7,
+  applicationIdentifierSize: 8,
+  applicationAuthCodeSize: 3,
+  disposalMethodMask: 28,
+  userInputFlagMask: 2,
+  transparentColorFlagMask: 1,
+  localColorTableFlagMask: 128,
+  interlaceFlagMask: 64,
+  idSortFlagMask: 32,
+  localColorTableSizeMask: 7
+};
+
+// src/stream.js
+function createStream(initialCapacity = 256) {
+  let cursor = 0;
+  let contents = new Uint8Array(initialCapacity);
+  return {
+    get buffer() {
+      return contents.buffer;
+    },
+    reset() {
+      cursor = 0;
+    },
+    bytesView() {
+      return contents.subarray(0, cursor);
+    },
+    bytes() {
+      return contents.slice(0, cursor);
+    },
+    writeByte(byte) {
+      expand(cursor + 1);
+      contents[cursor] = byte;
+      cursor++;
+    },
+    writeBytes(data, offset = 0, byteLength = data.length) {
+      expand(cursor + byteLength);
+      for (let i = 0; i < byteLength; i++) {
+        contents[cursor++] = data[i + offset];
+      }
+    },
+    writeBytesView(data, offset = 0, byteLength = data.byteLength) {
+      expand(cursor + byteLength);
+      contents.set(data.subarray(offset, offset + byteLength), cursor);
+      cursor += byteLength;
+    }
+  };
+  function expand(newCapacity) {
+    var prevCapacity = contents.length;
+    if (prevCapacity >= newCapacity)
+      return;
+    var CAPACITY_DOUBLING_MAX = 1024 * 1024;
+    newCapacity = Math.max(newCapacity, prevCapacity * (prevCapacity < CAPACITY_DOUBLING_MAX ? 2 : 1.125) >>> 0);
+    if (prevCapacity != 0)
+      newCapacity = Math.max(newCapacity, 256);
+    const oldContents = contents;
+    contents = new Uint8Array(newCapacity);
+    if (cursor > 0)
+      contents.set(oldContents.subarray(0, cursor), 0);
+  }
+}
+
+// src/lzwEncode.js
+var BITS = 12;
+var DEFAULT_HSIZE = 5003;
+var MASKS = [
+  0,
+  1,
+  3,
+  7,
+  15,
+  31,
+  63,
+  127,
+  255,
+  511,
+  1023,
+  2047,
+  4095,
+  8191,
+  16383,
+  32767,
+  65535
+];
+function lzwEncode(width, height, pixels, colorDepth, outStream = createStream(512), accum = new Uint8Array(256), htab = new Int32Array(DEFAULT_HSIZE), codetab = new Int32Array(DEFAULT_HSIZE)) {
+  const hsize = htab.length;
+  const initCodeSize = Math.max(2, colorDepth);
+  accum.fill(0);
+  codetab.fill(0);
+  htab.fill(-1);
+  let cur_accum = 0;
+  let cur_bits = 0;
+  const init_bits = initCodeSize + 1;
+  const g_init_bits = init_bits;
+  let clear_flg = false;
+  let n_bits = g_init_bits;
+  let maxcode = (1 << n_bits) - 1;
+  const ClearCode = 1 << init_bits - 1;
+  const EOFCode = ClearCode + 1;
+  let free_ent = ClearCode + 2;
+  let a_count = 0;
+  let ent = pixels[0];
+  let hshift = 0;
+  for (let fcode = hsize; fcode < 65536; fcode *= 2) {
+    ++hshift;
+  }
+  hshift = 8 - hshift;
+  outStream.writeByte(initCodeSize);
+  output(ClearCode);
+  const length = pixels.length;
+  for (let idx = 1; idx < length; idx++) {
+    next_block: {
+      const c = pixels[idx];
+      const fcode = (c << BITS) + ent;
+      let i = c << hshift ^ ent;
+      if (htab[i] === fcode) {
+        ent = codetab[i];
+        break next_block;
+      }
+      const disp = i === 0 ? 1 : hsize - i;
+      while (htab[i] >= 0) {
+        i -= disp;
+        if (i < 0)
+          i += hsize;
+        if (htab[i] === fcode) {
+          ent = codetab[i];
+          break next_block;
+        }
+      }
+      output(ent);
+      ent = c;
+      if (free_ent < 1 << BITS) {
+        codetab[i] = free_ent++;
+        htab[i] = fcode;
+      } else {
+        htab.fill(-1);
+        free_ent = ClearCode + 2;
+        clear_flg = true;
+        output(ClearCode);
+      }
+    }
+  }
+  output(ent);
+  output(EOFCode);
+  outStream.writeByte(0);
+  return outStream.bytesView();
+  function output(code) {
+    cur_accum &= MASKS[cur_bits];
+    if (cur_bits > 0)
+      cur_accum |= code << cur_bits;
+    else
+      cur_accum = code;
+    cur_bits += n_bits;
+    while (cur_bits >= 8) {
+      accum[a_count++] = cur_accum & 255;
+      if (a_count >= 254) {
+        outStream.writeByte(a_count);
+        outStream.writeBytesView(accum, 0, a_count);
+        a_count = 0;
+      }
+      cur_accum >>= 8;
+      cur_bits -= 8;
+    }
+    if (free_ent > maxcode || clear_flg) {
+      if (clear_flg) {
+        n_bits = g_init_bits;
+        maxcode = (1 << n_bits) - 1;
+        clear_flg = false;
+      } else {
+        ++n_bits;
+        maxcode = n_bits === BITS ? 1 << n_bits : (1 << n_bits) - 1;
+      }
+    }
+    if (code == EOFCode) {
+      while (cur_bits > 0) {
+        accum[a_count++] = cur_accum & 255;
+        if (a_count >= 254) {
+          outStream.writeByte(a_count);
+          outStream.writeBytesView(accum, 0, a_count);
+          a_count = 0;
+        }
+        cur_accum >>= 8;
+        cur_bits -= 8;
+      }
+      if (a_count > 0) {
+        outStream.writeByte(a_count);
+        outStream.writeBytesView(accum, 0, a_count);
+        a_count = 0;
+      }
+    }
+  }
+}
+var lzwEncode_default = lzwEncode;
+
+// src/rgb-packing.js
+function rgb888_to_rgb565(r, g, b) {
+  return r << 8 & 63488 | g << 2 & 992 | b >> 3;
+}
+function rgba8888_to_rgba4444(r, g, b, a) {
+  return r >> 4 | g & 240 | (b & 240) << 4 | (a & 240) << 8;
+}
+function rgb888_to_rgb444(r, g, b) {
+  return r >> 4 << 8 | g & 240 | b >> 4;
+}
+
+// src/pnnquant2.js
+function clamp(value, min, max) {
+  return value < min ? min : value > max ? max : value;
+}
+function sqr(value) {
+  return value * value;
+}
+function find_nn(bins, idx, hasAlpha) {
+  var nn = 0;
+  var err = 1e100;
+  const bin1 = bins[idx];
+  const n1 = bin1.cnt;
+  const wa = bin1.ac;
+  const wr = bin1.rc;
+  const wg = bin1.gc;
+  const wb = bin1.bc;
+  for (var i = bin1.fw; i != 0; i = bins[i].fw) {
+    const bin = bins[i];
+    const n2 = bin.cnt;
+    const nerr2 = n1 * n2 / (n1 + n2);
+    if (nerr2 >= err)
+      continue;
+    var nerr = 0;
+    if (hasAlpha) {
+      nerr += nerr2 * sqr(bin.ac - wa);
+      if (nerr >= err)
+        continue;
+    }
+    nerr += nerr2 * sqr(bin.rc - wr);
+    if (nerr >= err)
+      continue;
+    nerr += nerr2 * sqr(bin.gc - wg);
+    if (nerr >= err)
+      continue;
+    nerr += nerr2 * sqr(bin.bc - wb);
+    if (nerr >= err)
+      continue;
+    err = nerr;
+    nn = i;
+  }
+  bin1.err = err;
+  bin1.nn = nn;
+}
+function create_bin() {
+  return {
+    ac: 0,
+    rc: 0,
+    gc: 0,
+    bc: 0,
+    cnt: 0,
+    nn: 0,
+    fw: 0,
+    bk: 0,
+    tm: 0,
+    mtm: 0,
+    err: 0
+  };
+}
+function create_bin_list(data, format) {
+  const bincount = format === "rgb444" ? 4096 : 65536;
+  const bins = new Array(bincount);
+  const size = data.length;
+  if (format === "rgba4444") {
+    for (let i = 0; i < size; ++i) {
+      const color = data[i];
+      const a = color >> 24 & 255;
+      const b = color >> 16 & 255;
+      const g = color >> 8 & 255;
+      const r = color & 255;
+      const index = rgba8888_to_rgba4444(r, g, b, a);
+      let bin = index in bins ? bins[index] : bins[index] = create_bin();
+      bin.rc += r;
+      bin.gc += g;
+      bin.bc += b;
+      bin.ac += a;
+      bin.cnt++;
+    }
+  } else if (format === "rgb444") {
+    for (let i = 0; i < size; ++i) {
+      const color = data[i];
+      const b = color >> 16 & 255;
+      const g = color >> 8 & 255;
+      const r = color & 255;
+      const index = rgb888_to_rgb444(r, g, b);
+      let bin = index in bins ? bins[index] : bins[index] = create_bin();
+      bin.rc += r;
+      bin.gc += g;
+      bin.bc += b;
+      bin.cnt++;
+    }
+  } else {
+    for (let i = 0; i < size; ++i) {
+      const color = data[i];
+      const b = color >> 16 & 255;
+      const g = color >> 8 & 255;
+      const r = color & 255;
+      const index = rgb888_to_rgb565(r, g, b);
+      let bin = index in bins ? bins[index] : bins[index] = create_bin();
+      bin.rc += r;
+      bin.gc += g;
+      bin.bc += b;
+      bin.cnt++;
+    }
+  }
+  return bins;
+}
+function quantize(rgba, maxColors, opts = {}) {
+  const {
+    format = "rgb565",
+    clearAlpha = true,
+    clearAlphaColor = 0,
+    clearAlphaThreshold = 0,
+    oneBitAlpha = false
+  } = opts;
+  if (!rgba || !rgba.buffer) {
+    throw new Error("quantize() expected RGBA Uint8Array data");
+  }
+  if (!(rgba instanceof Uint8Array) && !(rgba instanceof Uint8ClampedArray)) {
+    throw new Error("quantize() expected RGBA Uint8Array data");
+  }
+  const data = new Uint32Array(rgba.buffer);
+  let useSqrt = opts.useSqrt !== false;
+  const hasAlpha = format === "rgba4444";
+  const bins = create_bin_list(data, format);
+  const bincount = bins.length;
+  const bincountMinusOne = bincount - 1;
+  const heap = new Uint32Array(bincount + 1);
+  var maxbins = 0;
+  for (var i = 0; i < bincount; ++i) {
+    const bin = bins[i];
+    if (bin != null) {
+      var d = 1 / bin.cnt;
+      if (hasAlpha)
+        bin.ac *= d;
+      bin.rc *= d;
+      bin.gc *= d;
+      bin.bc *= d;
+      bins[maxbins++] = bin;
+    }
+  }
+  if (sqr(maxColors) / maxbins < 0.022) {
+    useSqrt = false;
+  }
+  var i = 0;
+  for (; i < maxbins - 1; ++i) {
+    bins[i].fw = i + 1;
+    bins[i + 1].bk = i;
+    if (useSqrt)
+      bins[i].cnt = Math.sqrt(bins[i].cnt);
+  }
+  if (useSqrt)
+    bins[i].cnt = Math.sqrt(bins[i].cnt);
+  var h, l, l2;
+  for (i = 0; i < maxbins; ++i) {
+    find_nn(bins, i, false);
+    var err = bins[i].err;
+    for (l = ++heap[0]; l > 1; l = l2) {
+      l2 = l >> 1;
+      if (bins[h = heap[l2]].err <= err)
+        break;
+      heap[l] = h;
+    }
+    heap[l] = i;
+  }
+  var extbins = maxbins - maxColors;
+  for (i = 0; i < extbins; ) {
+    var tb;
+    for (; ; ) {
+      var b1 = heap[1];
+      tb = bins[b1];
+      if (tb.tm >= tb.mtm && bins[tb.nn].mtm <= tb.tm)
+        break;
+      if (tb.mtm == bincountMinusOne)
+        b1 = heap[1] = heap[heap[0]--];
+      else {
+        find_nn(bins, b1, false);
+        tb.tm = i;
+      }
+      var err = bins[b1].err;
+      for (l = 1; (l2 = l + l) <= heap[0]; l = l2) {
+        if (l2 < heap[0] && bins[heap[l2]].err > bins[heap[l2 + 1]].err)
+          l2++;
+        if (err <= bins[h = heap[l2]].err)
+          break;
+        heap[l] = h;
+      }
+      heap[l] = b1;
+    }
+    var nb = bins[tb.nn];
+    var n1 = tb.cnt;
+    var n2 = nb.cnt;
+    var d = 1 / (n1 + n2);
+    if (hasAlpha)
+      tb.ac = d * (n1 * tb.ac + n2 * nb.ac);
+    tb.rc = d * (n1 * tb.rc + n2 * nb.rc);
+    tb.gc = d * (n1 * tb.gc + n2 * nb.gc);
+    tb.bc = d * (n1 * tb.bc + n2 * nb.bc);
+    tb.cnt += nb.cnt;
+    tb.mtm = ++i;
+    bins[nb.bk].fw = nb.fw;
+    bins[nb.fw].bk = nb.bk;
+    nb.mtm = bincountMinusOne;
+  }
+  let palette = [];
+  var k = 0;
+  for (i = 0; ; ++k) {
+    let r = clamp(Math.round(bins[i].rc), 0, 255);
+    let g = clamp(Math.round(bins[i].gc), 0, 255);
+    let b = clamp(Math.round(bins[i].bc), 0, 255);
+    let a = 255;
+    if (hasAlpha) {
+      a = clamp(Math.round(bins[i].ac), 0, 255);
+      if (oneBitAlpha) {
+        const threshold = typeof oneBitAlpha === "number" ? oneBitAlpha : 127;
+        a = a <= threshold ? 0 : 255;
+      }
+      if (clearAlpha && a <= clearAlphaThreshold) {
+        r = g = b = clearAlphaColor;
+        a = 0;
+      }
+    }
+    const color = hasAlpha ? [r, g, b, a] : [r, g, b];
+    const exists = existsInPalette(palette, color);
+    if (!exists)
+      palette.push(color);
+    if ((i = bins[i].fw) == 0)
+      break;
+  }
+  return palette;
+}
+function existsInPalette(palette, color) {
+  for (let i = 0; i < palette.length; i++) {
+    const p = palette[i];
+    let matchesRGB = p[0] === color[0] && p[1] === color[1] && p[2] === color[2];
+    let matchesAlpha = p.length >= 4 && color.length >= 4 ? p[3] === color[3] : true;
+    if (matchesRGB && matchesAlpha)
+      return true;
+  }
+  return false;
+}
+
+// src/color.js
+function euclideanDistanceSquared(a, b) {
+  var sum = 0;
+  var n;
+  for (n = 0; n < a.length; n++) {
+    const dx = a[n] - b[n];
+    sum += dx * dx;
+  }
+  return sum;
+}
+
+// src/palettize.js
+function roundStep(byte, step) {
+  return step > 1 ? Math.round(byte / step) * step : byte;
+}
+function prequantize(rgba, {roundRGB = 5, roundAlpha = 10, oneBitAlpha = null} = {}) {
+  const data = new Uint32Array(rgba.buffer);
+  for (let i = 0; i < data.length; i++) {
+    const color = data[i];
+    let a = color >> 24 & 255;
+    let b = color >> 16 & 255;
+    let g = color >> 8 & 255;
+    let r = color & 255;
+    a = roundStep(a, roundAlpha);
+    if (oneBitAlpha) {
+      const threshold = typeof oneBitAlpha === "number" ? oneBitAlpha : 127;
+      a = a <= threshold ? 0 : 255;
+    }
+    r = roundStep(r, roundRGB);
+    g = roundStep(g, roundRGB);
+    b = roundStep(b, roundRGB);
+    data[i] = a << 24 | b << 16 | g << 8 | r << 0;
+  }
+}
+function applyPalette(rgba, palette, format = "rgb565") {
+  if (!rgba || !rgba.buffer) {
+    throw new Error("quantize() expected RGBA Uint8Array data");
+  }
+  if (!(rgba instanceof Uint8Array) && !(rgba instanceof Uint8ClampedArray)) {
+    throw new Error("quantize() expected RGBA Uint8Array data");
+  }
+  if (palette.length > 256) {
+    throw new Error("applyPalette() only works with 256 colors or less");
+  }
+  const data = new Uint32Array(rgba.buffer);
+  const length = data.length;
+  const bincount = format === "rgb444" ? 4096 : 65536;
+  const index = new Uint8Array(length);
+  const cache = new Array(bincount);
+  const hasAlpha = format === "rgba4444";
+  if (format === "rgba4444") {
+    for (let i = 0; i < length; i++) {
+      const color = data[i];
+      const a = color >> 24 & 255;
+      const b = color >> 16 & 255;
+      const g = color >> 8 & 255;
+      const r = color & 255;
+      const key = rgba8888_to_rgba4444(r, g, b, a);
+      const idx = key in cache ? cache[key] : cache[key] = nearestColorIndexRGBA(r, g, b, a, palette);
+      index[i] = idx;
+    }
+  } else {
+    const rgb888_to_key = format === "rgb444" ? rgb888_to_rgb444 : rgb888_to_rgb565;
+    for (let i = 0; i < length; i++) {
+      const color = data[i];
+      const b = color >> 16 & 255;
+      const g = color >> 8 & 255;
+      const r = color & 255;
+      const key = rgb888_to_key(r, g, b);
+      const idx = key in cache ? cache[key] : cache[key] = nearestColorIndexRGB(r, g, b, palette);
+      index[i] = idx;
+    }
+  }
+  return index;
+}
+function nearestColorIndexRGBA(r, g, b, a, palette) {
+  let k = 0;
+  let mindist = 1e100;
+  for (let i = 0; i < palette.length; i++) {
+    const px2 = palette[i];
+    const a2 = px2[3];
+    let curdist = sqr2(a2 - a);
+    if (curdist > mindist)
+      continue;
+    const r2 = px2[0];
+    curdist += sqr2(r2 - r);
+    if (curdist > mindist)
+      continue;
+    const g2 = px2[1];
+    curdist += sqr2(g2 - g);
+    if (curdist > mindist)
+      continue;
+    const b2 = px2[2];
+    curdist += sqr2(b2 - b);
+    if (curdist > mindist)
+      continue;
+    mindist = curdist;
+    k = i;
+  }
+  return k;
+}
+function nearestColorIndexRGB(r, g, b, palette) {
+  let k = 0;
+  let mindist = 1e100;
+  for (let i = 0; i < palette.length; i++) {
+    const px2 = palette[i];
+    const r2 = px2[0];
+    let curdist = sqr2(r2 - r);
+    if (curdist > mindist)
+      continue;
+    const g2 = px2[1];
+    curdist += sqr2(g2 - g);
+    if (curdist > mindist)
+      continue;
+    const b2 = px2[2];
+    curdist += sqr2(b2 - b);
+    if (curdist > mindist)
+      continue;
+    mindist = curdist;
+    k = i;
+  }
+  return k;
+}
+function snapColorsToPalette(palette, knownColors, threshold = 5) {
+  if (!palette.length || !knownColors.length)
+    return;
+  const paletteRGB = palette.map((p) => p.slice(0, 3));
+  const thresholdSq = threshold * threshold;
+  const dim = palette[0].length;
+  for (let i = 0; i < knownColors.length; i++) {
+    let color = knownColors[i];
+    if (color.length < dim) {
+      color = [color[0], color[1], color[2], 255];
+    } else if (color.length > dim) {
+      color = color.slice(0, 3);
+    } else {
+      color = color.slice();
+    }
+    const r = nearestColorIndexWithDistance(paletteRGB, color.slice(0, 3), euclideanDistanceSquared);
+    const idx = r[0];
+    const distanceSq = r[1];
+    if (distanceSq > 0 && distanceSq <= thresholdSq) {
+      palette[idx] = color;
+    }
+  }
+}
+function sqr2(a) {
+  return a * a;
+}
+function nearestColorIndex(colors, pixel, distanceFn = euclideanDistanceSquared) {
+  let minDist = Infinity;
+  let minDistIndex = -1;
+  for (let j = 0; j < colors.length; j++) {
+    const paletteColor = colors[j];
+    const dist = distanceFn(pixel, paletteColor);
+    if (dist < minDist) {
+      minDist = dist;
+      minDistIndex = j;
+    }
+  }
+  return minDistIndex;
+}
+function nearestColorIndexWithDistance(colors, pixel, distanceFn = euclideanDistanceSquared) {
+  let minDist = Infinity;
+  let minDistIndex = -1;
+  for (let j = 0; j < colors.length; j++) {
+    const paletteColor = colors[j];
+    const dist = distanceFn(pixel, paletteColor);
+    if (dist < minDist) {
+      minDist = dist;
+      minDistIndex = j;
+    }
+  }
+  return [minDistIndex, minDist];
+}
+function nearestColor(colors, pixel, distanceFn = euclideanDistanceSquared) {
+  return colors[nearestColorIndex(colors, pixel, distanceFn)];
+}
+
+// src/index.js
+function GIFEncoder(opt = {}) {
+  const {initialCapacity = 4096, auto = true} = opt;
+  const stream = createStream(initialCapacity);
+  const HSIZE = 5003;
+  const accum = new Uint8Array(256);
+  const htab = new Int32Array(HSIZE);
+  const codetab = new Int32Array(HSIZE);
+  let hasInit = false;
+  return {
+    reset() {
+      stream.reset();
+      hasInit = false;
+    },
+    finish() {
+      stream.writeByte(constants_default.trailer);
+    },
+    bytes() {
+      return stream.bytes();
+    },
+    bytesView() {
+      return stream.bytesView();
+    },
+    get buffer() {
+      return stream.buffer;
+    },
+    get stream() {
+      return stream;
+    },
+    writeHeader,
+    writeFrame(index, width, height, opts = {}) {
+      const {
+        transparent = false,
+        transparentIndex = 0,
+        delay = 0,
+        palette = null,
+        repeat = 0,
+        colorDepth = 8,
+        dispose = -1
+      } = opts;
+      let first = false;
+      if (auto) {
+        if (!hasInit) {
+          first = true;
+          writeHeader();
+          hasInit = true;
+        }
+      } else {
+        first = Boolean(opts.first);
+      }
+      width = Math.max(0, Math.floor(width));
+      height = Math.max(0, Math.floor(height));
+      if (first) {
+        if (!palette) {
+          throw new Error("First frame must include a { palette } option");
+        }
+        encodeLogicalScreenDescriptor(stream, width, height, palette, colorDepth);
+        encodeColorTable(stream, palette);
+        if (repeat >= 0) {
+          encodeNetscapeExt(stream, repeat);
+        }
+      }
+      const delayTime = Math.round(delay / 10);
+      encodeGraphicControlExt(stream, dispose, delayTime, transparent, transparentIndex);
+      const useLocalColorTable = Boolean(palette) && !first;
+      encodeImageDescriptor(stream, width, height, useLocalColorTable ? palette : null);
+      if (useLocalColorTable)
+        encodeColorTable(stream, palette);
+      encodePixels(stream, index, width, height, colorDepth, accum, htab, codetab);
+    }
+  };
+  function writeHeader() {
+    writeUTFBytes(stream, "GIF89a");
+  }
+}
+function encodeGraphicControlExt(stream, dispose, delay, transparent, transparentIndex) {
+  stream.writeByte(33);
+  stream.writeByte(249);
+  stream.writeByte(4);
+  if (transparentIndex < 0) {
+    transparentIndex = 0;
+    transparent = false;
+  }
+  var transp, disp;
+  if (!transparent) {
+    transp = 0;
+    disp = 0;
+  } else {
+    transp = 1;
+    disp = 2;
+  }
+  if (dispose >= 0) {
+    disp = dispose & 7;
+  }
+  disp <<= 2;
+  const userInput = 0;
+  stream.writeByte(0 | disp | userInput | transp);
+  writeUInt16(stream, delay);
+  stream.writeByte(transparentIndex || 0);
+  stream.writeByte(0);
+}
+function encodeLogicalScreenDescriptor(stream, width, height, palette, colorDepth = 8) {
+  const globalColorTableFlag = 1;
+  const sortFlag = 0;
+  const globalColorTableSize = colorTableSize(palette.length) - 1;
+  const fields = globalColorTableFlag << 7 | colorDepth - 1 << 4 | sortFlag << 3 | globalColorTableSize;
+  const backgroundColorIndex = 0;
+  const pixelAspectRatio = 0;
+  writeUInt16(stream, width);
+  writeUInt16(stream, height);
+  stream.writeBytes([fields, backgroundColorIndex, pixelAspectRatio]);
+}
+function encodeNetscapeExt(stream, repeat) {
+  stream.writeByte(33);
+  stream.writeByte(255);
+  stream.writeByte(11);
+  writeUTFBytes(stream, "NETSCAPE2.0");
+  stream.writeByte(3);
+  stream.writeByte(1);
+  writeUInt16(stream, repeat);
+  stream.writeByte(0);
+}
+function encodeColorTable(stream, palette) {
+  const colorTableLength = 1 << colorTableSize(palette.length);
+  for (let i = 0; i < colorTableLength; i++) {
+    let color = [0, 0, 0];
+    if (i < palette.length) {
+      color = palette[i];
+    }
+    stream.writeByte(color[0]);
+    stream.writeByte(color[1]);
+    stream.writeByte(color[2]);
+  }
+}
+function encodeImageDescriptor(stream, width, height, localPalette) {
+  stream.writeByte(44);
+  writeUInt16(stream, 0);
+  writeUInt16(stream, 0);
+  writeUInt16(stream, width);
+  writeUInt16(stream, height);
+  if (localPalette) {
+    const interlace = 0;
+    const sorted = 0;
+    const palSize = colorTableSize(localPalette.length) - 1;
+    stream.writeByte(128 | interlace | sorted | 0 | palSize);
+  } else {
+    stream.writeByte(0);
+  }
+}
+function encodePixels(stream, index, width, height, colorDepth = 8, accum, htab, codetab) {
+  lzwEncode_default(width, height, index, colorDepth, stream, accum, htab, codetab);
+}
+function writeUInt16(stream, short) {
+  stream.writeByte(short & 255);
+  stream.writeByte(short >> 8 & 255);
+}
+function writeUTFBytes(stream, text) {
+  for (var i = 0; i < text.length; i++) {
+    stream.writeByte(text.charCodeAt(i));
+  }
+}
+function colorTableSize(length) {
+  return Math.max(Math.ceil(Math.log2(length)), 1);
+}
+var src_default = GIFEncoder;
+//# sourceMappingURL=gifenc.js.map
+
+  global.__gifenc = exports;
+})(typeof self !== 'undefined' ? self : this);
+</script>
+
+</body>
+</html>
