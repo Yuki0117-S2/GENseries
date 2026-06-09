@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#16161c">
-  <title>GIF_GEN v1.0</title>
+  <title>GIF_GEN v2.0</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -237,14 +237,38 @@
       color: #fff;
       font-weight: 600;
     }
-    .toggle button.disabled {
-      color: var(--ink-mute);
-      cursor: not-allowed;
-      opacity: 0.5;
+
+    /* ===== range slider (WebP quality 등) ===== */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: var(--panel-2);
+      border-radius: 3px;
+      outline: none;
+      margin: 8px 0;
+      padding: 0;
     }
-    .toggle button.disabled::after {
-      content: ' · 준비 중';
-      font-size: 10px;
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--c1);
+      cursor: pointer;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--c1);
+      cursor: pointer;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
     }
 
     .dropzone {
@@ -519,7 +543,7 @@
     <a href="index.html" class="back-to-main" title="메인으로">← 메인</a>
     <header class="header">
       <h1>GIF_GEN</h1>
-      <span class="ver">v1.0</span>
+      <span class="ver">v2.0</span>
     </header>
 
     <nav class="tabbar" role="tablist">
@@ -631,9 +655,13 @@
         <h2>프레임 시간</h2>
         <div class="field">
           <label>전체 (ms · 1000 = 1초)</label>
-          <input type="number" id="globalDuration" min="20" max="5000" value="120">
+          <div style="display:flex; gap:8px; align-items:stretch">
+            <input type="number" id="globalDuration" min="20" max="5000" value="120" style="flex:1">
+            <button type="button" id="applyAllDuration" title="모든 프레임에 전체 ms 값 적용"
+                    style="padding:0 14px; background:var(--panel-2); border:1px solid var(--line); border-radius:8px; color:var(--c1); font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap">↻ 모두 적용</button>
+          </div>
         </div>
-        <div class="hint">사진 추가하면 프레임별 미세조정 가능</div>
+        <div class="hint">새 사진 추가시 기본값 · 모두 적용 누르면 기존 프레임 미세조정도 덮어씀</div>
         <div class="image-list" id="durationList" style="margin-top:12px"></div>
       </div>
 
@@ -642,9 +670,14 @@
         <div class="field">
           <div class="toggle" id="formatToggle">
             <button class="active" data-format="gif">GIF</button>
-            <button class="disabled" data-format="webp" disabled>WebP</button>
+            <button data-format="webp">WebP</button>
           </div>
           <div class="hint" id="formatHint" style="margin-top:8px">호환성 최강. 카톡·SNS 다 됨.</div>
+        </div>
+        <div class="field" id="qualityField" hidden style="margin-top:12px">
+          <label>화질 <span id="qualityValue" style="font-family:'JetBrains Mono',monospace;color:var(--c1);font-weight:600">0.85</span></label>
+          <input type="range" id="qualitySlider" min="0.50" max="1.00" step="0.05" value="0.85">
+          <div class="hint">0.50 거칠게·가벼움 · 1.00 깔끔·무거움</div>
         </div>
       </div>
 
@@ -671,12 +704,12 @@
     'use strict';
 
     /* =========================================================
-       GIF_GEN v1.0 — 1단계: 골격
-       - 탭 전환, 입력 폼, 자동 저장
-       - 인코딩/합성/미리보기는 2단계
+       GIF_GEN v2.0 — WebP 지원 추가
+       - GIF: gifenc (기존 v1.0)
+       - WebP: canvas.toBlob('image/webp') + 자체 muxer (RIFF/VP8X/ANIM/ANMF)
        ========================================================= */
 
-    const STORAGE_KEY = 'GIF_GEN_settings_v1';
+    const STORAGE_KEY = 'GIF_GEN_settings_v2';
 
     const state = {
       images: [],
@@ -691,6 +724,7 @@
       borderColor: '#8888CC',
       globalDuration: 120,
       format: 'gif',
+      webpQuality: 0.85,
       activeTab: 'photo',
     };
 
@@ -783,6 +817,15 @@
       $('#formatHint').textContent = (v === 'gif')
         ? '호환성 최강. 카톡·SNS 다 됨.'
         : '화질·용량 우수. 일부 환경에선 정적 표시될 수 있음.';
+      $('#qualityField').hidden = (v !== 'webp');
+    });
+
+    /* ===== WebP quality slider ===== */
+    $('#qualitySlider').addEventListener('input', e => {
+      const v = parseFloat(e.target.value);
+      state.webpQuality = v;
+      $('#qualityValue').textContent = v.toFixed(2);
+      saveSettings();
     });
 
     /* ===== 색상 입력 동기화 ===== */
@@ -815,6 +858,21 @@
       const v = clamp(+e.target.value || 120, 20, 5000);
       state.globalDuration = v;
       saveSettings();
+    });
+
+    /* ===== 모두 적용 버튼 (기존 프레임 duration 일괄 덮어쓰기) ===== */
+    $('#applyAllDuration').addEventListener('click', () => {
+      if (state.images.length === 0) {
+        setStatus('imageStatus', '사진 먼저 추가해');
+        return;
+      }
+      // 현재 input 값 (state.globalDuration 보다 input 값이 더 최신일 수도)
+      const v = clamp(+$('#globalDuration').value || 120, 20, 5000);
+      state.globalDuration = v;
+      state.images.forEach(img => { img.duration = v; });
+      renderDurationList();
+      saveSettings();
+      setStatus('imageStatus', `${state.images.length}개 프레임 모두 ${v}ms로 적용`);
     });
 
     /* ===== 이미지 업로드 ===== */
@@ -1005,6 +1063,7 @@
           borderColor: state.borderColor,
           globalDuration: state.globalDuration,
           format: state.format,
+          webpQuality: state.webpQuality,
           activeTab: state.activeTab,
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
@@ -1049,6 +1108,9 @@
       $('#formatHint').textContent = (state.format === 'gif')
         ? '호환성 최강. 카톡·SNS 다 됨.'
         : '화질·용량 우수. 일부 환경에선 정적 표시될 수 있음.';
+      $('#qualityField').hidden = (state.format !== 'webp');
+      $('#qualitySlider').value = state.webpQuality;
+      $('#qualityValue').textContent = (+state.webpQuality).toFixed(2);
     }
 
     /* ===== 합성 헬퍼 ===== */
@@ -1161,6 +1223,141 @@
       }
     }
 
+    /* =========================================================
+       WebP muxer (Google WebP Container Spec / RFC 9649 기반)
+       정적 WebP blob들을 받아 애니메이티드 WebP Blob 조립
+       청크 구조:
+         RIFF + size + WEBP
+           + VP8X (flags + canvas W-1 + canvas H-1)
+           + ANIM (bg color + loop count)
+           + ANMF * N (frame meta + 추출한 VP8/VP8L/ALPH 청크)
+       ========================================================= */
+
+    // 정적 WebP arrayBuffer에서 VP8/VP8L/ALPH 청크 추출 + alpha 유무 판정
+    function parseWebPChunks(arrayBuffer) {
+      const u8 = new Uint8Array(arrayBuffer);
+      const view = new DataView(arrayBuffer);
+      const riff = String.fromCharCode(u8[0], u8[1], u8[2], u8[3]);
+      const webp = String.fromCharCode(u8[8], u8[9], u8[10], u8[11]);
+      if (riff !== 'RIFF' || webp !== 'WEBP') {
+        throw new Error('WebP 시그니처 불일치');
+      }
+      const chunks = [];
+      let hasAlpha = false;
+      let offset = 12;
+      while (offset + 8 <= arrayBuffer.byteLength) {
+        const fourcc = String.fromCharCode(u8[offset], u8[offset+1], u8[offset+2], u8[offset+3]);
+        const size = view.getUint32(offset + 4, true);
+        const payloadStart = offset + 8;
+        const payloadEnd = payloadStart + size;
+        if (payloadEnd > arrayBuffer.byteLength) break;
+        if (fourcc === 'VP8 ' || fourcc === 'VP8L' || fourcc === 'ALPH') {
+          chunks.push({
+            fourcc,
+            data: new Uint8Array(arrayBuffer.slice(payloadStart, payloadEnd)),
+          });
+          if (fourcc === 'ALPH') hasAlpha = true;
+          // VP8L 내장 alpha bit 검사 (signature 0x2f + 4-byte info, alpha = bit 28)
+          if (fourcc === 'VP8L' && size >= 5 && u8[payloadStart] === 0x2f) {
+            const info = view.getUint32(payloadStart + 1, true);
+            if ((info >>> 28) & 0x01) hasAlpha = true;
+          }
+        }
+        // 다음 청크 위치 (홀수 size면 1바이트 패딩)
+        offset = payloadEnd + (size & 1);
+      }
+      return { chunks, hasAlpha };
+    }
+
+    // 청크 작성 헬퍼 — RIFF 청크 1개(fourcc + size_LE + payload + pad) 생성
+    function buildChunk(fourcc, payload) {
+      const total = 8 + payload.length + (payload.length & 1);
+      const out = new Uint8Array(total);
+      for (let i = 0; i < 4; i++) out[i] = fourcc.charCodeAt(i);
+      const dv = new DataView(out.buffer);
+      dv.setUint32(4, payload.length, true);
+      out.set(payload, 8);
+      // 패딩 바이트 자동 0
+      return out;
+    }
+
+    // 3바이트 LE 쓰기
+    function write3LE(arr, offset, value) {
+      arr[offset]     = value & 0xff;
+      arr[offset + 1] = (value >>> 8) & 0xff;
+      arr[offset + 2] = (value >>> 16) & 0xff;
+    }
+
+    // 정적 WebP blob 배열 → 애니메이티드 WebP Blob
+    async function muxAnimatedWebP(blobs, durationsMs, canvasW, canvasH, loopCount) {
+      const frames = [];
+      let anyAlpha = false;
+      for (const b of blobs) {
+        const buf = await b.arrayBuffer();
+        const { chunks, hasAlpha } = parseWebPChunks(buf);
+        frames.push(chunks);
+        if (hasAlpha) anyAlpha = true;
+      }
+
+      // VP8X payload (10 bytes)
+      const vp8xPayload = new Uint8Array(10);
+      let flags = 0x02; // Animation
+      if (anyAlpha) flags |= 0x10; // Alpha
+      vp8xPayload[0] = flags;
+      write3LE(vp8xPayload, 4, canvasW - 1);
+      write3LE(vp8xPayload, 7, canvasH - 1);
+
+      // ANIM payload (6 bytes): BG color (BGRA, 0x00000000 = transparent) + loop count uint16 LE
+      const animPayload = new Uint8Array(6);
+      animPayload[4] = loopCount & 0xff;
+      animPayload[5] = (loopCount >>> 8) & 0xff;
+
+      // 청크 목록
+      const chunks = [];
+      chunks.push(buildChunk('VP8X', vp8xPayload));
+      chunks.push(buildChunk('ANIM', animPayload));
+
+      for (let i = 0; i < frames.length; i++) {
+        const subChunks = frames[i];
+        // 서브 청크들 길이 합산
+        const subSize = subChunks.reduce((s, c) => s + 8 + c.data.length + (c.data.length & 1), 0);
+        const anmfPayload = new Uint8Array(16 + subSize);
+        // bytes 0-2: X = 0 / 3-5: Y = 0
+        write3LE(anmfPayload, 6, canvasW - 1);
+        write3LE(anmfPayload, 9, canvasH - 1);
+        const dur = Math.max(1, Math.min(0xFFFFFF, durationsMs[i] | 0));
+        write3LE(anmfPayload, 12, dur);
+        // byte 15: flags — disposal=1 (background), blending=0 (use alpha) → 0x01
+        anmfPayload[15] = 0x01;
+        // 서브 청크들 쓰기
+        let off = 16;
+        for (const c of subChunks) {
+          const chunkBytes = buildChunk(c.fourcc, c.data);
+          anmfPayload.set(chunkBytes, off);
+          off += chunkBytes.length;
+        }
+        chunks.push(buildChunk('ANMF', anmfPayload));
+      }
+
+      // 최종 파일 조립: RIFF + size_LE + WEBP + chunks
+      const chunksSize = chunks.reduce((s, c) => s + c.length, 0);
+      const total = 12 + chunksSize;
+      const out = new Uint8Array(total);
+      // "RIFF"
+      out[0] = 0x52; out[1] = 0x49; out[2] = 0x46; out[3] = 0x46;
+      // size = total - 8 (RIFF header 자체 제외)
+      const dv = new DataView(out.buffer);
+      dv.setUint32(4, total - 8, true);
+      // "WEBP"
+      out[8] = 0x57; out[9] = 0x45; out[10] = 0x42; out[11] = 0x50;
+      let off = 12;
+      for (const c of chunks) {
+        out.set(c, off);
+        off += c.length;
+      }
+      return new Blob([out], { type: 'image/webp' });
+    }
+
     /* ===== Worker 생성 (gifenc 임베드) ===== */
     function createEncoderWorker() {
       const gifencSrc = document.getElementById('gifenc-lib').textContent;
@@ -1196,7 +1393,7 @@
       return new Worker(URL.createObjectURL(blob));
     }
 
-    /* ===== GIF 빌드 ===== */
+    /* ===== 빌드 (GIF / WebP 공통) ===== */
     let currentBuild = null;
 
     async function buildGIF() {
@@ -1213,68 +1410,43 @@
       progressFill.style.width = '0%';
 
       const t0 = performance.now();
+      const isWebP = state.format === 'webp';
 
       try {
-        // 1. 모든 프레임 합성 (메인 스레드)
+        // 1. 모든 프레임 합성 (메인 스레드 공통)
         setStatus('buildStatus', '프레임 합성 중...');
         const overlay = state.overlay ? await loadImageFromUrl(state.overlay.url) : null;
-        const frames = [];
+        const composed = [];
         for (let i = 0; i < state.images.length; i++) {
           const src = await loadImageFromUrl(state.images[i].url);
           const canvas = composeFrame(src, overlay, state.canvasW, state.canvasH);
-          const ctx = canvas.getContext('2d');
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          frames.push({
-            data: imageData.data,
+          composed.push({
+            canvas,
             delay: state.images[i].duration,
           });
           progressFill.style.width = (((i + 1) / state.images.length) * 30) + '%';
         }
 
-        // 2. Worker로 인코딩
-        setStatus('buildStatus', '인코딩 시작...');
-        const worker = createEncoderWorker();
-        currentBuild = worker;
-
-        const bytes = await new Promise((resolve, reject) => {
-          worker.onmessage = (e) => {
-            const msg = e.data;
-            if (msg.type === 'progress') {
-              setStatus('buildStatus', `인코딩 중 ${msg.current}/${msg.total}`);
-              const pct = 30 + (msg.current / msg.total) * 70;
-              progressFill.style.width = pct + '%';
-            } else if (msg.type === 'done') {
-              resolve(msg.bytes);
-            } else if (msg.type === 'error') {
-              reject(new Error(msg.message));
-            }
-          };
-          worker.onerror = (e) => reject(new Error(e.message || 'worker error'));
-
-          // ArrayBuffer 전송 (Uint8Array.buffer를 transferable로)
-          const buffers = frames.map(f => f.data.buffer);
-          worker.postMessage({
-            frames,
-            width: state.canvasW,
-            height: state.canvasH,
-            transparent: state.bgMode === 'transparent',
-          }, buffers);
-        });
-
-        worker.terminate();
-        currentBuild = null;
+        // 2. 분기 인코딩
+        let outBlob;
+        if (isWebP) {
+          outBlob = await encodeWebP(composed, progressFill);
+        } else {
+          outBlob = await encodeGIF(composed, progressFill);
+        }
 
         // 3. 결과 표시
-        const blob = new Blob([bytes], { type: 'image/gif' });
-        const url = URL.createObjectURL(blob);
+        const url = URL.createObjectURL(outBlob);
         $('#resultImg').src = url;
         const ms = Math.round(performance.now() - t0);
-        const kb = (blob.size / 1024).toFixed(1);
+        const kb = (outBlob.size / 1024).toFixed(1);
+        const formatLabel = isWebP ? 'WebP' : 'GIF';
         $('#resultMeta').textContent =
-          `${state.canvasW}×${state.canvasH} · ${frames.length}프레임 · ${kb} KB · ${ms}ms`;
+          `${state.canvasW}×${state.canvasH} · ${composed.length}프레임 · ${formatLabel} · ${kb} KB · ${ms}ms`;
         $('#resultBox').classList.add('show');
         $('#resultBox').dataset.blobUrl = url;
         $('#resultBox').dataset.filename = makeFilename();
+        $('#resultBox').dataset.mime = isWebP ? 'image/webp' : 'image/gif';
         progressFill.style.width = '100%';
         setStatus('buildStatus', '완성!');
       } catch (e) {
@@ -1287,10 +1459,95 @@
       }
     }
 
+    /* ===== GIF 인코딩 (gifenc Worker) ===== */
+    async function encodeGIF(composed, progressFill) {
+      setStatus('buildStatus', '인코딩 시작...');
+      const frames = composed.map(f => {
+        const ctx = f.canvas.getContext('2d');
+        const imageData = ctx.getImageData(0, 0, f.canvas.width, f.canvas.height);
+        return { data: imageData.data, delay: f.delay };
+      });
+
+      const worker = createEncoderWorker();
+      currentBuild = worker;
+
+      const bytes = await new Promise((resolve, reject) => {
+        worker.onmessage = (e) => {
+          const msg = e.data;
+          if (msg.type === 'progress') {
+            setStatus('buildStatus', `인코딩 중 ${msg.current}/${msg.total}`);
+            const pct = 30 + (msg.current / msg.total) * 70;
+            progressFill.style.width = pct + '%';
+          } else if (msg.type === 'done') {
+            resolve(msg.bytes);
+          } else if (msg.type === 'error') {
+            reject(new Error(msg.message));
+          }
+        };
+        worker.onerror = (e) => reject(new Error(e.message || 'worker error'));
+
+        const buffers = frames.map(f => f.data.buffer);
+        worker.postMessage({
+          frames,
+          width: state.canvasW,
+          height: state.canvasH,
+          transparent: state.bgMode === 'transparent',
+        }, buffers);
+      });
+
+      worker.terminate();
+      currentBuild = null;
+      return new Blob([bytes], { type: 'image/gif' });
+    }
+
+    /* ===== WebP 인코딩 (canvas.toBlob + muxer) ===== */
+    async function encodeWebP(composed, progressFill) {
+      const q = state.webpQuality;
+      const total = composed.length;
+
+      // 1프레임은 정적 WebP로 저장
+      if (total === 1) {
+        setStatus('buildStatus', '인코딩 중...');
+        const blob = await new Promise((res, rej) => {
+          composed[0].canvas.toBlob(
+            b => b ? res(b) : rej(new Error('toBlob 실패 — 이 브라우저가 WebP 인코딩을 지원하지 않을 수 있음')),
+            'image/webp',
+            q
+          );
+        });
+        progressFill.style.width = '100%';
+        return blob;
+      }
+
+      // 여러 프레임 → 정적 WebP blob 모음 → muxer
+      setStatus('buildStatus', '인코딩 시작...');
+      const blobs = [];
+      const durations = [];
+      for (let i = 0; i < total; i++) {
+        const blob = await new Promise((res, rej) => {
+          composed[i].canvas.toBlob(
+            b => b ? res(b) : rej(new Error('toBlob 실패')),
+            'image/webp',
+            q
+          );
+        });
+        blobs.push(blob);
+        durations.push(composed[i].delay);
+        setStatus('buildStatus', `인코딩 중 ${i + 1}/${total}`);
+        progressFill.style.width = (30 + ((i + 1) / total) * 60) + '%';
+      }
+
+      setStatus('buildStatus', '컨테이너 조립 중...');
+      const out = await muxAnimatedWebP(blobs, durations, state.canvasW, state.canvasH, 0);
+      progressFill.style.width = '95%';
+      return out;
+    }
+
     function makeFilename() {
       const d = new Date();
       const pad = n => String(n).padStart(2, '0');
-      return `GIF_GEN_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.gif`;
+      const ext = state.format === 'webp' ? 'webp' : 'gif';
+      return `GIF_GEN_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.${ext}`;
     }
 
     /* ===== 다운로드 / 공유 ===== */
@@ -1309,10 +1566,11 @@
     $('#shareBtn').addEventListener('click', async () => {
       const url = $('#resultBox').dataset.blobUrl;
       const name = $('#resultBox').dataset.filename;
+      const mime = $('#resultBox').dataset.mime || 'image/gif';
       if (!url) return;
       try {
         const blob = await fetch(url).then(r => r.blob());
-        const file = new File([blob], name, { type: 'image/gif' });
+        const file = new File([blob], name, { type: mime });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({ files: [file], title: name });
         } else {
@@ -1327,11 +1585,6 @@
     loadSettings();
     updateBuildButton();
     renderPreview();
-
-    // WebP 비활성 안내 (클릭 시도하면 메시지 표시)
-    document.querySelector('#formatToggle button.disabled').addEventListener('click', () => {
-      setStatus('buildStatus', 'WebP는 v2에서 지원 예정. 지금은 GIF만.');
-    });
   </script>
 
 <!-- gifenc library (MIT, mattdesl/gifenc) — embedded for offline use -->
