@@ -1017,6 +1017,19 @@ body.single-slot .slot-nav-btn { display: none; }
 .controls-wrapper::-webkit-scrollbar-track, .slot-panel::-webkit-scrollbar-track { background: var(--bg-panel); }
 .controls-wrapper::-webkit-scrollbar-thumb, .slot-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 .controls-wrapper::-webkit-scrollbar-thumb:hover, .slot-panel::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+/* 커스텀 confirm/alert 모달 — 네이티브 confirm 대체 (포커스 먹통 해결) */
+#confirm-overlay{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;padding:20px}
+#confirm-overlay.open{display:flex}
+.confirm-modal{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:22px;width:340px;max-width:100%;display:flex;flex-direction:column;gap:18px;box-shadow:0 12px 40px rgba(0,0,0,0.5)}
+.confirm-message{font-size:14px;color:var(--text-main);line-height:1.6;white-space:pre-wrap;word-break:keep-all}
+.confirm-btn-row{display:flex;gap:8px;justify-content:flex-end}
+.cm-btn{border:0;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.cm-btn:hover{opacity:.88}
+.cm-accent{background:var(--accent);color:#fff}
+.cm-danger{background:var(--c4);color:#fff}
+.cm-ghost{background:var(--bg-input);color:var(--text-sub);border:1px solid var(--border)}
+.cm-ghost:hover{opacity:1;color:var(--text-main)}
+.cm-btn:focus-visible{outline:2px solid var(--c2);outline-offset:2px}
 </style>
 </head>
 <body>
@@ -2142,8 +2155,8 @@ function removeSlot(idx) {
     renderCard();
 }
 
-function resetAllSlots() {
-    if (!confirm('정말 전부 비울까? 모든 슬롯의 이미지/입력 다 사라져')) return;
+async function resetAllSlots() {
+    if (!await showConfirm('정말 전부 비울까? 모든 슬롯의 이미지/입력 다 사라져', {danger:true})) return;
     cardThemeDark = false;
     currentColors = { c1: '#8888CC', c2: '#DDAACC' };
     slots = [newSlot(0)];
@@ -3367,6 +3380,9 @@ function escapeAttr(s) {
 }
 
 let _toastTimer = null;
+function showModal({message,danger,confirmText,cancelText,alert}){return new Promise(resolve=>{const ov=document.getElementById('confirm-overlay'),msgEl=document.getElementById('confirm-message'),okBtn=document.getElementById('confirm-ok'),cancelBtn=document.getElementById('confirm-cancel');msgEl.textContent=message;okBtn.textContent=confirmText||'확인';okBtn.className='cm-btn '+(danger?'cm-danger':'cm-accent');cancelBtn.textContent=cancelText||'취소';cancelBtn.style.display=alert?'none':'';ov.classList.add('open');okBtn.focus();function done(val){ov.classList.remove('open');okBtn.onclick=null;cancelBtn.onclick=null;ov.onclick=null;document.removeEventListener('keydown',onKey,true);resolve(val)}function onKey(e){if(e.key==='Enter'){e.preventDefault();e.stopPropagation();done(true)}else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();done(alert?true:false)}}okBtn.onclick=()=>done(true);cancelBtn.onclick=()=>done(false);ov.onclick=e=>{if(e.target===ov)done(alert?true:false)};document.addEventListener('keydown',onKey,true)})}
+function showConfirm(message,opts={}){return showModal({message,danger:opts.danger,confirmText:opts.confirmText,cancelText:opts.cancelText})}
+function showAlert(message,opts={}){return showModal({message,alert:true,confirmText:opts.confirmText||'확인'})}
 function toast(msg, variant /* 'accent'|'error'|undefined */) {
     const el = document.getElementById('toast');
     if (!el) return;
@@ -3396,5 +3412,14 @@ document.addEventListener('keydown', (e) => {
 // 초기화
 window.addEventListener('DOMContentLoaded', init);
 </script>
+<div id="confirm-overlay">
+  <div class="confirm-modal">
+    <div class="confirm-message" id="confirm-message"></div>
+    <div class="confirm-btn-row">
+      <button class="cm-btn cm-ghost" id="confirm-cancel">취소</button>
+      <button class="cm-btn cm-accent" id="confirm-ok">확인</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
