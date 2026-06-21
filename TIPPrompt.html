@@ -570,6 +570,12 @@
       <div class="output-box" style="margin-top: 6px;"><code>robocopy "원본" "목적지" /E /XD "제외할폴더명"</code><br>
         <span style="font-size: 12px; color: var(--text-muted);">특정 폴더는 건너뛰고 복사. 여러 폴더 제외 시 폴더명을 공백으로 나열.</span>
       </div>
+      <div class="output-box" style="margin-top: 6px;"><code>robocopy "E:\원본" "D:\목적지" /E /Z /MT:16 /XD "E:\원본\제외폴더"</code><br>
+        <span style="font-size: 12px; color: var(--text-muted);">전체 경로로 콕 집어 제외. 같은 이름 폴더가 여러 군데 있을 때 특정 하나만 정확히 빼고 싶으면 폴더명 대신 전체 경로를 적는다.</span>
+      </div>
+      <div class="output-box" style="margin-top: 6px;"><code>robocopy "원본" "목적지" /E /XF "제외할파일명"</code><br>
+        <span style="font-size: 12px; color: var(--text-muted);">특정 파일을 건너뛰고 복사. <code>config.json</code> 처럼 파일명을 적거나 <code>*.log</code> 처럼 와일드카드로 지정 가능.</span>
+      </div>
     </div>
 
     <div style="margin-bottom: 20px;">
@@ -579,6 +585,21 @@
       </div>
     </div>
 
+    <div style="margin-bottom: 20px;">
+      <span class="tag tag-c1">이동 / 미리보기</span>
+      <div class="output-box"><code>robocopy "원본" "목적지" /E /Z /MT:16 /MOVE</code><br>
+        <span style="font-size: 12px; color: var(--text-muted);">복사가 아니라 <strong style="color: var(--c4-light);">진짜 이동</strong>. 복사 완료 후 원본을 자동 삭제한다. 드라이브 정리·공간 확보에 유용하나, 원본이 사라지므로 신중히.</span>
+      </div>
+      <div class="output-box" style="margin-top: 6px;"><code>robocopy "원본" "목적지" /E /Z /MT:16 /L</code><br>
+        <span style="font-size: 12px; color: var(--text-muted);">실제 복사는 하지 않고 <strong>"이렇게 복사될 예정"</strong>이라는 결과만 미리 보여주는 시뮬레이션. 명령어가 맞는지, 어떤 파일이 옮겨질지 사고 전에 확인하는 용도.</span>
+      </div>
+    </div>
+
+    <div class="output-box" style="background: rgba(187,102,136,0.08); border-color: rgba(187,102,136,0.3); margin-bottom: 20px;">
+      <span style="font-size: 12px; color: var(--c4-light); font-weight: bold;">TIP — 목적지 폴더는 미리 안 만들어도 됨</span><br>
+      <span style="font-size: 12px; color: var(--text-sub);">목적지 경로의 폴더가 없으면 robocopy가 자동으로 만들어준다. <code>D:\새폴더</code>가 없어도 그냥 경로만 적으면 폴더부터 생성하고 내용을 채운다.</span>
+    </div>
+
     <ul style="margin-top: 4px;">
       <li><strong>/E</strong> — 하위 폴더 + 빈 폴더까지 전부 복사</li>
       <li><strong>/Z</strong> — 이어받기 모드. 중단된 파일 재시작 지원</li>
@@ -586,7 +607,10 @@
       <li><strong>/MIR</strong> — 완전 미러링. <strong style="color: var(--c4-light);">원본 삭제 = 백업 삭제</strong>이므로 주의</li>
       <li><strong>/XO</strong> — 원본보다 오래된 파일만 덮어씀 (새 파일·변경 파일만 추가)</li>
       <li><strong>/R:N /W:N</strong> — 재시도 횟수 N회, 대기 간격 N초 설정</li>
-      <li><strong>/XD "폴더명"</strong> — 해당 폴더 제외</li>
+      <li><strong>/XD "폴더명"</strong> — 해당 폴더 제외 (전체 경로로 적으면 특정 하나만 정확히 제외)</li>
+      <li><strong>/XF "파일명"</strong> — 해당 파일 제외 (<code>*.log</code> 같은 와일드카드 가능)</li>
+      <li><strong>/MOVE</strong> — 복사 후 원본 삭제 (진짜 이동). <strong style="color: var(--c4-light);">원본이 사라지므로 주의</strong></li>
+      <li><strong>/L</strong> — 미리보기 모드. 실제 복사 없이 결과만 시뮬레이션</li>
     </ul>
   </div>
 
