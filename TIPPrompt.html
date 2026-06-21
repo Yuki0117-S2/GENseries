@@ -540,6 +540,56 @@
     </ul>
   </div>
 
+  <div class="card" style="border-top: 2px solid var(--c1); margin-top: 8px;">
+    <div class="card-title" style="font-size: 15px; color: var(--c1-light); margin-bottom: 20px;">RoboCopy 백업 치트시트</div>
+    <p style="color: var(--text-sub); margin-bottom: 20px; font-size: 13px;">Windows 내장 복사 도구. 탐색기보다 안정적이고, 이어받기·미러링·선택 복사까지 지원합니다.</p>
+
+    <div style="margin-bottom: 20px;">
+      <span class="tag tag-c1">기본 복사</span>
+      <div class="output-box"><code>robocopy "원본폴더" "목적지폴더" /E /Z /MT:16</code></div>
+      <div class="output-box" style="margin-top: 6px;"><code>robocopy "원본폴더" "목적지폴더" /E /Z /MT:16 /R:3 /W:5</code><br>
+        <span style="font-size: 12px; color: var(--text-muted);">실패 시 3번 재시도, 5초 간격. 실전에서 권장하는 기본 세트.</span>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <span class="tag tag-c2">동기화 / 미러링</span>
+      <div class="output-box"><code>robocopy "원본" "백업" /MIR /Z /MT:16</code><br>
+        <span style="font-size: 12px; color: var(--text-muted);">원본과 백업을 완전히 동기화. 원본에서 지운 파일은 백업에서도 삭제됨. 주의해서 사용.</span>
+      </div>
+      <div class="output-box" style="margin-top: 6px;"><code>robocopy "원본" "백업" /E /XO /Z /MT:16</code><br>
+        <span style="font-size: 12px; color: var(--text-muted);">새 파일·변경 파일만 복사. 삭제는 따라가지 않아 LoRA·모델 백업에 안전.</span>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <span class="tag tag-c3">선택적 복사</span>
+      <div class="output-box"><code>robocopy "원본" "목적지" *.safetensors /S /Z</code><br>
+        <span style="font-size: 12px; color: var(--text-muted);">특정 확장자 파일만 골라서 복사. safetensors, png 등 원하는 확장자로 변경 가능.</span>
+      </div>
+      <div class="output-box" style="margin-top: 6px;"><code>robocopy "원본" "목적지" /E /XD "제외할폴더명"</code><br>
+        <span style="font-size: 12px; color: var(--text-muted);">특정 폴더는 건너뛰고 복사. 여러 폴더 제외 시 폴더명을 공백으로 나열.</span>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <span class="tag tag-c4">로그 저장</span>
+      <div class="output-box"><code>robocopy "원본" "목적지" /E /Z /MT:16 /LOG:C:\robocopy_log.txt</code><br>
+        <span style="font-size: 12px; color: var(--text-muted);">복사 결과(성공·실패·스킵 파일 목록)를 txt 파일로 저장.</span>
+      </div>
+    </div>
+
+    <ul style="margin-top: 4px;">
+      <li><strong>/E</strong> — 하위 폴더 + 빈 폴더까지 전부 복사</li>
+      <li><strong>/Z</strong> — 이어받기 모드. 중단된 파일 재시작 지원</li>
+      <li><strong>/MT:16</strong> — 16스레드 병렬 복사. SSD 환경에서 속도 향상</li>
+      <li><strong>/MIR</strong> — 완전 미러링. <strong style="color: var(--c4-light);">원본 삭제 = 백업 삭제</strong>이므로 주의</li>
+      <li><strong>/XO</strong> — 원본보다 오래된 파일만 덮어씀 (새 파일·변경 파일만 추가)</li>
+      <li><strong>/R:N /W:N</strong> — 재시도 횟수 N회, 대기 간격 N초 설정</li>
+      <li><strong>/XD "폴더명"</strong> — 해당 폴더 제외</li>
+    </ul>
+  </div>
+
 </div>
 
 </body>
